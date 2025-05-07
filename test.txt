@@ -1,0 +1,14 @@
+npm init -y
+npm install prisma --save-dev
+npm install @prisma/client
+
+npx prisma init
+npm install typescript ts-node @types/node --save-dev
+npx tsc --init
+npm install cors
+npm install --save-dev @types/cors
+npm install express
+npm install --save-dev @types/express
+
+pawpal.sup@gmail.com
+enep ligo tswk swjp

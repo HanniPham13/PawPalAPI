@@ -1,0 +1,385 @@
+// This is a Prisma schema file for PawPal - a pet rehoming and social media application
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - core user information
+model User {
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  username           String              @unique
+  password           String
+ firstName           String
+ lastName            String
+  bio                String?             @db.Text
+  location           String?
+  profilePicture     String?
+  coverPicture       String?
+  isVerified         Boolean             @default(false)
+  loggedInAsGoogle   Boolean             @default(false)
+  isEmailVerified    Boolean             @default(false)
+  verificationCode   String?
+  verificationLevel  VerificationLevel   @default(BASIC)
+  role               UserRole            @default(USER)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  // Relations
+  pets               Pet[]
+  posts              Post[]
+  comments           Comment[]
+  reactions          Reaction[]
+  followers          Follow[]            @relation("follower")
+  following          Follow[]            @relation("following")
+  sentMessages       Message[]           @relation("sender")
+  receivedMessages   Message[]           @relation("receiver")
+  notifications      Notification[]      @relation("notificationReceiver")
+  sentNotifications  Notification[]      @relation("notificationSender")
+  verificationDocs   VerificationDocument[]
+  petApplications    AdoptionApplication[] @relation("applicant")
+  receivedApplications AdoptionApplication[] @relation("petOwner")
+  ownedChats         Chat[]              @relation("chatOwner")
+  participatedChats  ChatParticipant[]
+  userVerifications  UserVerification[]
+}
+
+
+
+// Pet model - information about pets
+model Pet {
+  id                 String    @id @default(uuid())
+  name               String
+  species            PetSpecies
+  breed              String?
+  age                Int?
+  gender             PetGender?
+  size               PetSize?
+  color              String?
+  description        String?   @db.Text
+  profilePicture     String?
+  isAdoptable        Boolean   @default(false)
+  isFeatured         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  ownerId            String
+  owner              User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  posts              Post[]    @relation("petTagged")
+  medicalRecords     MedicalRecord[]
+  applications       AdoptionApplication[] @relation("petToAdopt")
+
+  @@index([ownerId])
+}
+
+// Post model - for social media functionality
+model Post {
+  id                 String    @id @default(uuid())
+  content            String    @db.Text
+  images             String?   // JSON array of image URLs
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  taggedPets         Pet[]     @relation("petTagged")
+  comments           Comment[]
+  reactions          Reaction[]
+
+  @@index([authorId])
+}
+
+// Comment model
+model Comment {
+  id                 String    @id @default(uuid())
+  content            String    @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  postId             String
+  post               Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId           String?   // For nested comments
+  parent             Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies            Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// Reaction model for likes, hearts, etc.
+model Reaction {
+  id                 String        @id @default(uuid())
+  type               ReactionType
+  createdAt          DateTime      @default(now())
+  
+  // Relations
+  postId             String
+  post               Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+// Follow relation between users
+model Follow {
+  id                 String    @id @default(uuid())
+  createdAt          DateTime  @default(now())
+  
+  // Relations
+  followerId         String
+  follower           User      @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId        String
+  following          User      @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// Medical record for pets
+model MedicalRecord {
+  id                 String    @id @default(uuid())
+  title              String
+  description        String    @db.Text
+  date               DateTime
+  documentUrl        String?   // URL to stored document
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  petId              String
+  pet                Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+  verifiedBy         String?   // ID of vet/admin who verified
+  
+  @@index([petId])
+}
+
+// Verification documents uploaded by users
+model VerificationDocument {
+  id                 String         @id @default(uuid())
+  documentType       DocumentType
+  documentUrl        String         // URL to stored document
+  status             VerificationStatus @default(PENDING)
+  rejectionReason    String?        @db.Text
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  
+  // Relations
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedById       String?        // ID of admin/vet who verified
+
+  @@index([userId])
+}
+
+// User verification status
+model UserVerification {
+  id                 String         @id @default(uuid())
+  verificationLevel  VerificationLevel
+  verifiedAt         DateTime       @default(now())
+  
+  // Relations
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedById       String?        // ID of admin/vet who verified
+
+  @@index([userId])
+}
+
+// Adoption application
+model AdoptionApplication {
+  id                 String         @id @default(uuid())
+  status             ApplicationStatus @default(PENDING)
+  message            String         @db.Text
+  rejectionReason    String?        @db.Text
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  
+  // Relations
+  petId              String
+  pet                Pet            @relation("petToAdopt", fields: [petId], references: [id], onDelete: Cascade)
+  applicantId        String
+  applicant          User           @relation("applicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  petOwnerId         String
+  petOwner           User           @relation("petOwner", fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@index([applicantId])
+  @@index([petOwnerId])
+}
+
+// Chat model for real-time messaging
+model Chat {
+  id                 String           @id @default(uuid())
+  name               String?
+  isGroup            Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  
+  // Relations
+  ownerId            String
+  owner              User             @relation("chatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  participants       ChatParticipant[]
+  messages           Message[]
+
+  @@index([ownerId])
+}
+
+// Chat participants
+model ChatParticipant {
+  id                 String    @id @default(uuid())
+  joinedAt           DateTime  @default(now())
+  
+  // Relations
+  chatId             String
+  chat               Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadMessageId  String?
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+// Message model
+model Message {
+  id                 String    @id @default(uuid())
+  content            String    @db.Text
+  isRead             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  
+  // Relations
+  chatId             String
+  chat               Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId           String
+  sender             User      @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId         String
+  receiver           User      @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+// Notification model
+model Notification {
+  id                 String           @id @default(uuid())
+  type               NotificationType
+  message            String
+  isRead             Boolean          @default(false)
+  entityId           String?          // ID of related entity (post, comment, etc.)
+  entityType         String?          // Type of related entity
+  createdAt          DateTime         @default(now())
+  
+  // Relations
+  receiverId         String
+  receiver           User             @relation("notificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  senderId           String?
+  sender             User?            @relation("notificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([receiverId])
+  @@index([senderId])
+}
+
+// Enums
+enum UserRole {
+  USER
+  VET
+  ADMIN 
+}
+
+enum VerificationLevel {
+  BASIC          // Email verified
+  VERIFIED       // ID verified
+  PURRPARENT     // Verified pet owner
+  SUPER_ADOPTER  // Proven adopter with good history
+  VET            // Verified veterinarian
+}
+
+enum PetSpecies {
+  DOG
+  CAT
+  BIRD
+  RABBIT
+  HAMSTER
+  GUINEA_PIG
+  FISH
+  REPTILE
+  OTHER
+}
+
+enum PetGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum PetSize {
+  EXTRA_SMALL
+  SMALL
+  MEDIUM
+  LARGE
+  EXTRA_LARGE
+}
+
+enum DocumentType {
+  ID_CARD
+  DRIVERS_LICENSE
+  PASSPORT
+  PROOF_OF_ADDRESS
+  VET_LICENSE
+  PET_MEDICAL_RECORD
+  ADOPTION_FORM
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+  COMPLETED
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  CARE
+  LAUGH
+  SAD
+  ANGRY
+  WOW
+}
+
+enum NotificationType {
+  FOLLOW
+  LIKE
+  COMMENT
+  MESSAGE
+  PET_APPLICATION
+  APPLICATION_UPDATE
+  VERIFICATION
+  SYSTEM
+}
