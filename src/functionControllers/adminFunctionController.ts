@@ -1,6 +1,7 @@
 import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { sendVerificationApprovalEmail, sendVerificationRejectionEmail } from '../services/emailService';
 
 const prisma = new PrismaClient();
 
@@ -70,6 +71,299 @@ export const adminLogin = async (email: string, password: string): Promise<{
     return {
       success: false,
       message: 'An error occurred during login'
+    };
+  }
+};
+
+export const getPendingVerifications = async (page: number = 1, limit: number = 10): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+  hasMore: boolean;
+}> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const verifications = await prisma.verificationDocument.findMany({
+      where: {
+        status: 'PENDING'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profile: {
+              select: {
+                profilePictureUrl: true
+              }
+            }
+          }
+        },
+        VerificationDocumentFile: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip,
+      take: limit + 1
+    });
+
+    const hasMore = verifications.length > limit;
+    const verificationsToReturn = hasMore ? verifications.slice(0, limit) : verifications;
+
+    return {
+      success: true,
+      message: 'Pending verifications retrieved successfully',
+      data: verificationsToReturn,
+      hasMore
+    };
+  } catch (error) {
+    console.error('Get pending verifications error:', error);
+    return {
+      success: false,
+      message: 'Failed to retrieve pending verifications',
+      hasMore: false
+    };
+  }
+};
+
+export const approveVerification = async (verificationId: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the verification document
+    const verification = await prisma.verificationDocument.findUnique({
+      where: { id: verificationId },
+      include: { user: true }
+    });
+
+    if (!verification) {
+      return {
+        success: false,
+        message: 'Verification document not found'
+      };
+    }
+
+    // Allow approving if status is PENDING or REJECTED
+    if (verification.status !== 'PENDING' && verification.status !== 'REJECTED') {
+      return {
+        success: false,
+        message: `Verification already ${verification.status.toLowerCase()}`
+      };
+    }
+
+    // Update verification status to APPROVED
+    const updatedVerification = await prisma.verificationDocument.update({
+      where: { id: verificationId },
+      data: { 
+        status: 'APPROVED',
+        rejectionReason: verification.status === 'REJECTED' ? null : verification.rejectionReason // Clear rejection reason if it exists
+      }
+    });
+
+    // Update user's verification level to PURRPARENT
+    await prisma.user.update({
+      where: { id: verification.userId },
+      data: { verificationLevel: 'PURRPARENT' }
+    });
+
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: verification.status === 'REJECTED' ? 
+          'Good news! Your previously rejected verification request has been reconsidered and approved. You are now a PurrParent.' : 
+          'Your verification request has been approved! You are now a PurrParent.',
+        receiverId: verification.userId,
+        senderId: verification.userId // Self notification since it's system-generated
+      }
+    });
+
+    // Send approval email to the user
+    await sendVerificationApprovalEmail(verification.user);
+
+    return {
+      success: true,
+      message: verification.status === 'REJECTED' ? 
+        'Verification status reversed from rejected to approved' : 
+        'Verification approved successfully',
+      data: updatedVerification
+    };
+  } catch (error) {
+    console.error('Approve verification error:', error);
+    return {
+      success: false,
+      message: 'Failed to approve verification'
+    };
+  }
+};
+
+export const rejectVerification = async (verificationId: string, reason: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the verification document
+    const verification = await prisma.verificationDocument.findUnique({
+      where: { id: verificationId },
+      include: { user: true }
+    });
+
+    if (!verification) {
+      return {
+        success: false,
+        message: 'Verification document not found'
+      };
+    }
+
+    // Allow rejecting if status is PENDING or APPROVED
+    if (verification.status !== 'PENDING' && verification.status !== 'APPROVED') {
+      return {
+        success: false,
+        message: `Verification already ${verification.status.toLowerCase()}`
+      };
+    }
+
+    // If the verification was previously approved, also update the user's verification level
+    if (verification.status === 'APPROVED') {
+      await prisma.user.update({
+        where: { id: verification.userId },
+        data: { verificationLevel: 'VERIFIED' } // Reset to regular VERIFIED status
+      });
+    }
+
+    // Update verification status to REJECTED
+    const updatedVerification = await prisma.verificationDocument.update({
+      where: { id: verificationId },
+      data: { 
+        status: 'REJECTED',
+        rejectionReason: reason
+      }
+    });
+
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: `Your verification request has been rejected. Reason: ${reason}`,
+        receiverId: verification.userId,
+        senderId: verification.userId // Self notification since it's system-generated
+      }
+    });
+
+    // Send rejection email to the user
+    await sendVerificationRejectionEmail(verification.user, reason);
+
+    return {
+      success: true,
+      message: verification.status === 'APPROVED' ? 
+        'Verification status reversed from approved to rejected' : 
+        'Verification rejected successfully',
+      data: updatedVerification
+    };
+  } catch (error) {
+    console.error('Reject verification error:', error);
+    return {
+      success: false,
+      message: 'Failed to reject verification'
+    };
+  }
+};
+
+// New function to create an admin user
+export const createAdmin = async (data: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email }
+    });
+
+    if (existingUser) {
+      return {
+        success: false,
+        message: 'Email already in use'
+      };
+    }
+
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: data.username }
+    });
+
+    if (existingUsername) {
+      return {
+        success: false,
+        message: 'Username already in use'
+      };
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Create admin user
+    const admin = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        role: 'ADMIN',
+        isEmailVerified: true, // Auto-verify admin accounts
+        verificationLevel: 'VERIFIED', // Use VERIFIED instead of ADMIN
+        profile: {
+          create: {} // Create an empty profile
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        role: true,
+        verificationLevel: true,
+        createdAt: true
+      }
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, role: admin.role },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' } // Longer expiry for testing
+    );
+
+    return {
+      success: true,
+      message: 'Admin user created successfully',
+      data: {
+        user: admin,
+        token
+      }
+    };
+  } catch (error) {
+    console.error('Create admin error:', error);
+    return {
+      success: false,
+      message: 'Failed to create admin user'
     };
   }
 };

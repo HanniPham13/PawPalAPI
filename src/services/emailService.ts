@@ -76,3 +76,72 @@ export const sendPasswordResetEmail = async (user: any, resetToken: string): Pro
     return false;
   }
 };
+
+// Send email for verification approval
+export const sendVerificationApprovalEmail = async (user: any): Promise<boolean> => {
+  try {
+    // Create email options
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'PawPal - Verification Approved',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #333;">Congratulations, ${user.firstName} ${user.lastName}!</h2>
+          <p>We're pleased to inform you that your verification request has been <strong style="color: #4CAF50;">approved</strong>.</p>
+          <p>You are now a verified PurrParent on PawPal, which gives you the ability to:</p>
+          <ul style="padding-left: 20px; line-height: 1.6;">
+            <li>Apply to adopt pets</li>
+            <li>Participate in adoption events</li>
+            <li>Access exclusive PurrParent features</li>
+          </ul>
+          <p>Thank you for being a part of our community and for your commitment to animal welfare.</p>
+          <p>Best regards,<br>PawPal Team</p>
+        </div>
+      `
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification approval email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending verification approval email:', error);
+    return false;
+  }
+};
+
+// Send email for verification rejection
+export const sendVerificationRejectionEmail = async (user: any, reason: string): Promise<boolean> => {
+  try {
+    // Create email options
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'PawPal - Verification Update',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #333;">Hello, ${user.firstName} ${user.lastName}</h2>
+          <p>We've reviewed your verification request and unfortunately, we were unable to approve it at this time.</p>
+          <p><strong>Reason:</strong> ${reason}</p>
+          <p>You can submit a new verification request with the required documents through the app. Please ensure that:</p>
+          <ul style="padding-left: 20px; line-height: 1.6;">
+            <li>All documents are clearly visible and not blurry</li>
+            <li>Information in the documents is up-to-date</li>
+            <li>You've submitted all the required document types</li>
+          </ul>
+          <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+          <p>Best regards,<br>PawPal Team</p>
+        </div>
+      `
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification rejection email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending verification rejection email:', error);
+    return false;
+  }
+};

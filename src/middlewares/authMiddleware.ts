@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     email: string;
     role: string;
   };
+  file?: Express.Multer.File;
 }
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -64,4 +65,14 @@ export const verifiedOnly = (req: AuthRequest, res: Response, next: NextFunction
   }).catch(() => {
     res.status(500).json({ success: false, message: 'Server error' });
   });
+};
+
+// Admin only middleware
+export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user?.role !== 'ADMIN') {
+    res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+    return;
+  }
+  
+  next();
 };

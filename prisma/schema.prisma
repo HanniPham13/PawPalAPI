@@ -16,12 +16,9 @@ model User {
   email              String              @unique
   username           String              @unique
   password           String
- firstName           String
- lastName            String
+  firstName          String
+  lastName           String
   bio                String?             @db.Text
-  location           String?
-  profilePicture     String?
-  coverPicture       String?
   isVerified         Boolean             @default(false)
   loggedInAsGoogle   Boolean             @default(false)
   isEmailVerified    Boolean             @default(false)
@@ -32,8 +29,9 @@ model User {
   updatedAt          DateTime            @updatedAt
 
   // Relations
-  pets               Pet[]
-  posts              Post[]
+  petProfiles        PetProfile[]
+  socialPosts        SocialPost[]
+  adoptionPosts      PetAdoptionPost[]
   comments           Comment[]
   reactions          Reaction[]
   followers          Follow[]            @relation("follower")
@@ -48,12 +46,41 @@ model User {
   ownedChats         Chat[]              @relation("chatOwner")
   participatedChats  ChatParticipant[]
   userVerifications  UserVerification[]
+  FullAddress        FullAddress[]
+  profile            Profile[]
+  coverPicture       CoverPicture[]
+  favorites          Favorite[]          // New relation for favorites
+
+  SavedPost SavedPost[]
+}
+
+model Profile {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profilePictureUrl     String?
+}
+
+model CoverPicture {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverPictureUrl    String?
+}
+
+model FullAddress {
+  id                 String    @id @default(uuid())
+  address            String
+  city               String
+  state              String
+  zipCode            String
+  user               User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String?
 }
 
 
-
-// Pet model - information about pets
-model Pet {
+// Pet Profile model - for managing pet information
+model PetProfile {
   id                 String    @id @default(uuid())
   name               String
   species            PetSpecies
@@ -72,29 +99,110 @@ model Pet {
   // Relations
   ownerId            String
   owner              User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  posts              Post[]    @relation("petTagged")
   medicalRecords     MedicalRecord[]
-  applications       AdoptionApplication[] @relation("petToAdopt")
+  adoptionPosts      PetAdoptionPost[] // Relation to adoption posts
+  favorites          Favorite[]        // Relation to favorites
+  socialPosts        SocialPost[]      @relation("petTagged") // Relation to social posts
 
   @@index([ownerId])
 }
 
-// Post model - for social media functionality
-model Post {
+// Social Post model - for social media functionality
+model SocialPost {
   id                 String    @id @default(uuid())
   content            String    @db.Text
-  images             String?   // JSON array of image URLs
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   
   // Relations
   authorId           String
   author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  taggedPets         Pet[]     @relation("petTagged")
+  taggedPets         PetProfile[] @relation("petTagged")
   comments           Comment[]
   reactions          Reaction[]
+  favorites          Favorite[]  // Relation to favorites
 
   @@index([authorId])
+  SocialPostImage SocialPostImage[]
+
+  SavedPost SavedPost[]
+}
+
+model SocialPostImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  socialPostId       String
+  socialPost         SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+}
+
+// Pet Adoption Post model - specifically for pet adoption
+model PetAdoptionPost {
+  id                 String    @id @default(uuid())
+  title              String
+  description        String    @db.Text
+ 
+  location           String?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  petProfileId       String?
+  petProfile         PetProfile? @relation(fields: [petProfileId], references: [id], onDelete: SetNull)
+  applications       AdoptionApplication[]
+  favorites          Favorite[]  // Relation to favorites
+
+  @@index([authorId])
+  @@index([petProfileId])
+  PetAdoptionPostImage PetAdoptionPostImage[]
+}
+
+model PetAdoptionPostImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  petAdoptionPostId  String
+  petAdoptionPost    PetAdoptionPost @relation(fields: [petAdoptionPostId], references: [id], onDelete: Cascade)
+}
+// Favorite model - for saving posts and pets
+model Favorite {
+  id                 String    @id @default(uuid())
+  createdAt          DateTime  @default(now())
+  
+  // Relations
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petProfileId       String?
+  petProfile         PetProfile? @relation(fields: [petProfileId], references: [id], onDelete: Cascade)
+  socialPostId       String?
+  socialPost         SocialPost? @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+  adoptionPostId     String?
+  adoptionPost       PetAdoptionPost? @relation(fields: [adoptionPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, petProfileId])
+  @@unique([userId, socialPostId])
+  @@unique([userId, adoptionPostId])
+  @@index([userId])
+  @@index([petProfileId])
+  @@index([socialPostId])
+  @@index([adoptionPostId])
+}
+
+// Saved Post model - for saving posts to read later
+model SavedPost {
+  id                 String    @id @default(uuid())
+  createdAt          DateTime  @default(now())
+  
+  // Relations
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId             String
+  post               SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }
 
 // Comment model
@@ -106,7 +214,7 @@ model Comment {
   
   // Relations
   postId             String
-  post               Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post               SocialPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId           String
   author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   parentId           String?   // For nested comments
@@ -126,7 +234,7 @@ model Reaction {
   
   // Relations
   postId             String
-  post               Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post               SocialPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId             String
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -162,18 +270,17 @@ model MedicalRecord {
   updatedAt          DateTime  @updatedAt
   
   // Relations
-  petId              String
-  pet                Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+  petProfileId       String
+  petProfile         PetProfile       @relation(fields: [petProfileId], references: [id], onDelete: Cascade)
   verifiedBy         String?   // ID of vet/admin who verified
   
-  @@index([petId])
+  @@index([petProfileId])
 }
 
 // Verification documents uploaded by users
 model VerificationDocument {
   id                 String         @id @default(uuid())
   documentType       DocumentType
-  documentUrl        String         // URL to stored document
   status             VerificationStatus @default(PENDING)
   rejectionReason    String?        @db.Text
   createdAt          DateTime       @default(now())
@@ -183,9 +290,21 @@ model VerificationDocument {
   userId             String
   user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   verifiedById       String?        // ID of admin/vet who verified
-
+ 
+ 
   @@index([userId])
+  VerificationDocumentFile VerificationDocumentFile[]
 }
+
+model VerificationDocumentFile {
+  id                 String         @id @default(uuid())
+  documentUrl        String         // URL to stored document
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  verificationDocumentId String
+  verificationDocument VerificationDocument @relation(fields: [verificationDocumentId], references: [id], onDelete: Cascade)
+}
+
 
 // User verification status
 model UserVerification {
@@ -211,14 +330,14 @@ model AdoptionApplication {
   updatedAt          DateTime       @updatedAt
   
   // Relations
-  petId              String
-  pet                Pet            @relation("petToAdopt", fields: [petId], references: [id], onDelete: Cascade)
+  adoptionPostId     String
+  adoptionPost       PetAdoptionPost @relation(fields: [adoptionPostId], references: [id], onDelete: Cascade)
   applicantId        String
   applicant          User           @relation("applicant", fields: [applicantId], references: [id], onDelete: Cascade)
   petOwnerId         String
   petOwner           User           @relation("petOwner", fields: [petOwnerId], references: [id], onDelete: Cascade)
 
-  @@index([petId])
+  @@index([adoptionPostId])
   @@index([applicantId])
   @@index([petOwnerId])
 }
@@ -236,8 +355,15 @@ model Chat {
   owner              User             @relation("chatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   participants       ChatParticipant[]
   messages           Message[]
-
+  chatFiles          ChatFile[]
   @@index([ownerId])
+}
+
+model ChatFile {
+  id                 String    @id @default(uuid())
+  fileUrl            String
+  chatId             String
+  chat               Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 // Chat participants
@@ -383,3 +509,5 @@ enum NotificationType {
   VERIFICATION
   SYSTEM
 }
+
+
