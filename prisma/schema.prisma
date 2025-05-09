@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  // output   = "./generated/prisma"
 }
 
 datasource db {
@@ -50,8 +51,14 @@ model User {
   profile            Profile[]
   coverPicture       CoverPicture[]
   favorites          Favorite[]          // New relation for favorites
-
-  SavedPost SavedPost[]
+  SavedPost          SavedPost[]
+  
+  // Clinic, posts and products relations
+  clinics            Clinic[]           // Vet users can manage clinics
+  vetPosts           VetPost[]          // Vet educational posts
+  petTips            PetTip[]           // Pet health tips
+  products           PetProduct[]       // Pet products
+  clinicUpdates      ClinicUpdate[]     // Clinic updates/announcements
 }
 
 model Profile {
@@ -76,8 +83,173 @@ model FullAddress {
   zipCode            String
   user               User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId             String?
+  clinic             Clinic?           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  clinicId           String?
+
+  @@index([clinicId])
 }
 
+// Clinic model - for veterinary clinics
+model Clinic {
+  id                 String    @id @default(uuid())
+  name               String
+  description        String?   @db.Text
+  phone              String?
+  email              String?
+  website            String?
+  operatingHours     String?
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  ownerId            String    // Clinic owner (vet or admin)
+  owner              User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  address            FullAddress[]
+  vetPosts           VetPost[]
+  petTips            PetTip[]
+  products           PetProduct[]
+  updates            ClinicUpdate[]
+  
+  @@index([ownerId])
+  ClinicImage        ClinicImage[]
+}
+
+model ClinicImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  clinicId           String
+  clinic             Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  
+  @@index([clinicId])
+}
+
+// Vet Posts - educational content by veterinarians
+model VetPost {
+  id                 String    @id @default(uuid())
+  title              String
+  content            String    @db.Text
+  isPublished        Boolean   @default(true)
+  isFeatured         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  authorId           String    // Vet who created the post
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  clinicId           String?   // Optional association with a clinic
+  clinic             Clinic?   @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  
+  @@index([authorId])
+  @@index([clinicId])
+  VetPostImage       VetPostImage[]
+  categories         VetPostCategory[] @relation("PostCategories")
+}
+
+model VetPostImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  vetPostId          String
+  vetPost            VetPost   @relation(fields: [vetPostId], references: [id], onDelete: Cascade)
+  
+  @@index([vetPostId])
+}
+
+model VetPostCategory {
+  id                 String    @id @default(uuid())
+  name               String    @unique
+  description        String?   @db.Text
+  posts              VetPost[] @relation("PostCategories")
+}
+
+// Pet Health Tips
+model PetTip {
+  id                 String    @id @default(uuid())
+  title              String
+  content            String    @db.Text
+  species            PetSpecies?  // Optional targeting for specific species
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  clinicId           String?
+  clinic             Clinic?   @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  
+  @@index([authorId])
+  @@index([clinicId])
+  PetTipImage        PetTipImage[]
+}
+
+model PetTipImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  petTipId           String
+  petTip             PetTip    @relation(fields: [petTipId], references: [id], onDelete: Cascade)
+  
+  @@index([petTipId])
+}
+
+// Pet Products
+model PetProduct {
+  id                 String    @id @default(uuid())
+  name               String
+  description        String    @db.Text
+  price              Decimal   @db.Decimal(10, 2)
+  isAvailable        Boolean   @default(true)
+  category           ProductCategory
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  sellerId           String
+  seller             User      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  clinicId           String?
+  clinic             Clinic?   @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  
+  @@index([sellerId])
+  @@index([clinicId])
+  ProductImage       ProductImage[]
+}
+
+model ProductImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  productId          String
+  product            PetProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+}
+
+// Clinic Updates and Announcements
+model ClinicUpdate {
+  id                 String    @id @default(uuid())
+  title              String
+  content            String    @db.Text
+  isImportant        Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relations
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  clinicId           String
+  clinic             Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  
+  @@index([authorId])
+  @@index([clinicId])
+  UpdateImage        UpdateImage[]
+}
+
+model UpdateImage {
+  id                 String    @id @default(uuid())
+  imageUrl           String
+  updateId           String
+  update             ClinicUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  
+  @@index([updateId])
+}
 
 // Pet Profile model - for managing pet information
 model PetProfile {
@@ -357,6 +529,7 @@ model Chat {
   messages           Message[]
   chatFiles          ChatFile[]
   @@index([ownerId])
+
 }
 
 model ChatFile {
@@ -364,6 +537,12 @@ model ChatFile {
   fileUrl            String
   chatId             String
   chat               Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  messageId          String?   @unique
+  message            Message?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([chatId])
 }
 
 // Chat participants
@@ -397,6 +576,7 @@ model Message {
   sender             User      @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId         String
   receiver           User      @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  chatFile           ChatFile?
 
   @@index([chatId])
   @@index([senderId])
@@ -509,5 +689,22 @@ enum NotificationType {
   VERIFICATION
   SYSTEM
 }
+
+// New enum for product categories
+enum ProductCategory {
+  FOOD
+  TOY
+  MEDICATION
+  SUPPLEMENT
+  GROOMING
+  ACCESSORY
+  BED
+  CAGE
+  AQUARIUM
+  CLOTHING
+  OTHER
+}
+
+
 
 

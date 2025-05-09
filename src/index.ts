@@ -6,6 +6,7 @@ import http from 'http';
 import mainRoutes from './routes/mainRoutes';
 import adminRouter from './routes/adminRoutes';
 import userRoutes from './routes/userRoutes';
+import petRoutes from './routes/petRoutes';
 
 const app = express();
 
@@ -26,8 +27,7 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-// app.use('/api/pet', petRoutes);
-// app.use('/api/user', userRoutes);
+app.use('/api/pet', petRoutes);
 app.use('/api', mainRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/user', userRoutes);

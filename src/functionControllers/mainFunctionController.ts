@@ -992,10 +992,10 @@ export const sendMessage = async (userId: string, data: {
         chatId: data.chatId,
         senderId: userId,
         receiverId: data.receiverId,
-        // Create chat file if fileUrl is provided
         chatFile: data.fileUrl ? {
           create: {
-            fileUrl: data.fileUrl
+            fileUrl: data.fileUrl,
+            chatId: data.chatId
           }
         } : undefined
       },
@@ -1034,7 +1034,7 @@ export const sendMessage = async (userId: string, data: {
     await prisma.notification.create({
       data: {
         type: 'MESSAGE',
-        message: `${message.sender.firstName} ${message.sender.lastName} has sent you a ${data.fileUrl ? 'file' : 'message'}`,
+        message: `You have received a ${data.fileUrl ? 'file' : 'message'}`,
         receiverId: data.receiverId,
         senderId: userId,
         entityId: message.id,
