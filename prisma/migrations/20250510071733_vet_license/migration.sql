@@ -1,0 +1,22 @@
+-- CreateTable
+CREATE TABLE `VetDocument` (
+    `id` VARCHAR(191) NOT NULL,
+    `documentType` ENUM('VETERINARY_DEGREE', 'PRACTICE_LICENSE', 'BOARD_CERTIFICATION', 'CONTINUING_EDUCATION', 'SPECIALTY_CERTIFICATION', 'CLINIC_REGISTRATION', 'INSURANCE_DOCUMENT', 'REFERENCE_LETTER', 'PROFESSIONAL_MEMBERSHIP', 'OTHER') NOT NULL,
+    `documentUrl` VARCHAR(191) NOT NULL,
+    `status` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `issueDate` DATETIME(3) NULL,
+    `expiryDate` DATETIME(3) NULL,
+    `issuingAuthority` VARCHAR(191) NULL,
+    `licenseNumber` VARCHAR(191) NULL,
+    `specialization` VARCHAR(191) NULL,
+    `rejectionReason` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+
+    INDEX `VetDocument_userId_idx`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `VetDocument` ADD CONSTRAINT `VetDocument_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

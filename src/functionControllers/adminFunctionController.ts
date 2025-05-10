@@ -367,3 +367,281 @@ export const createAdmin = async (data: {
     };
   }
 };
+
+// Function to register a vet user by admin
+export const registerVet = async (data: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email }
+    });
+
+    if (existingUser) {
+      return {
+        success: false,
+        message: 'Email already in use'
+      };
+    }
+
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: data.username }
+    });
+
+    if (existingUsername) {
+      return {
+        success: false,
+        message: 'Username already in use'
+      };
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Create vet user
+    const vet = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        role: 'VET',
+        isEmailVerified: true, // Auto-verify vet accounts registered by admin
+        verificationLevel: 'VET',
+        profile: {
+          create: {} // Create an empty profile
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        role: true,
+        verificationLevel: true,
+        createdAt: true
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Vet user registered successfully',
+      data: {
+        user: vet
+      }
+    };
+  } catch (error) {
+    console.error('Register vet error:', error);
+    return {
+      success: false,
+      message: 'Failed to register vet user'
+    };
+  }
+};
+
+// Function to get all pending vet documents
+export const getPendingVetDocuments = async (page: number = 1, limit: number = 10): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+  hasMore: boolean;
+}> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const vetDocuments = await prisma.vetDocument.findMany({
+      where: {
+        status: 'PENDING'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profile: {
+              select: {
+                profilePictureUrl: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip,
+      take: limit + 1
+    });
+
+    const hasMore = vetDocuments.length > limit;
+    const documentsToReturn = hasMore ? vetDocuments.slice(0, limit) : vetDocuments;
+
+    return {
+      success: true,
+      message: 'Pending vet documents retrieved successfully',
+      data: documentsToReturn,
+      hasMore
+    };
+  } catch (error) {
+    console.error('Get pending vet documents error:', error);
+    return {
+      success: false,
+      message: 'Failed to retrieve pending vet documents',
+      hasMore: false
+    };
+  }
+};
+
+// Function to approve a vet document
+export const approveVetDocument = async (documentId: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the vet document
+    const vetDocument = await prisma.vetDocument.findUnique({
+      where: { id: documentId },
+      include: { user: true }
+    });
+
+    if (!vetDocument) {
+      return {
+        success: false,
+        message: 'Vet document not found'
+      };
+    }
+
+    // Allow approving if status is PENDING or REJECTED
+    if (vetDocument.status !== 'PENDING' && vetDocument.status !== 'REJECTED') {
+      return {
+        success: false,
+        message: `Document already ${vetDocument.status.toLowerCase()}`
+      };
+    }
+
+    // Update document status to APPROVED
+    const updatedDocument = await prisma.vetDocument.update({
+      where: { id: documentId },
+      data: { 
+        status: 'APPROVED',
+        rejectionReason: vetDocument.status === 'REJECTED' ? null : vetDocument.rejectionReason // Clear rejection reason if it exists
+      }
+    });
+
+    // If this is the first approved vet document, update user's role and verification level
+    if (vetDocument.user.role !== 'VET') {
+      await prisma.user.update({
+        where: { id: vetDocument.userId },
+        data: { 
+          role: 'VET',
+          verificationLevel: 'VET'
+        }
+      });
+    }
+
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: vetDocument.status === 'REJECTED' ? 
+          'Your previously rejected veterinary document has been reconsidered and approved.' : 
+          'Your veterinary document has been approved!',
+        receiverId: vetDocument.userId,
+        senderId: vetDocument.userId // Self notification since it's system-generated
+      }
+    });
+
+    return {
+      success: true,
+      message: vetDocument.status === 'REJECTED' ? 
+        'Vet document status reversed from rejected to approved' : 
+        'Vet document approved successfully',
+      data: updatedDocument
+    };
+  } catch (error) {
+    console.error('Approve vet document error:', error);
+    return {
+      success: false,
+      message: 'Failed to approve vet document'
+    };
+  }
+};
+
+// Function to reject a vet document
+export const rejectVetDocument = async (documentId: string, reason: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the vet document
+    const vetDocument = await prisma.vetDocument.findUnique({
+      where: { id: documentId },
+      include: { user: true }
+    });
+
+    if (!vetDocument) {
+      return {
+        success: false,
+        message: 'Vet document not found'
+      };
+    }
+
+    // Allow rejecting if status is PENDING or APPROVED
+    if (vetDocument.status !== 'PENDING' && vetDocument.status !== 'APPROVED') {
+      return {
+        success: false,
+        message: `Document already ${vetDocument.status.toLowerCase()}`
+      };
+    }
+
+    // Update document status to REJECTED
+    const updatedDocument = await prisma.vetDocument.update({
+      where: { id: documentId },
+      data: { 
+        status: 'REJECTED',
+        rejectionReason: reason
+      }
+    });
+
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: `Your veterinary document has been rejected. Reason: ${reason}`,
+        receiverId: vetDocument.userId,
+        senderId: vetDocument.userId // Self notification since it's system-generated
+      }
+    });
+
+    return {
+      success: true,
+      message: vetDocument.status === 'APPROVED' ? 
+        'Vet document status reversed from approved to rejected' : 
+        'Vet document rejected successfully',
+      data: updatedDocument
+    };
+  } catch (error) {
+    console.error('Reject vet document error:', error);
+    return {
+      success: false,
+      message: 'Failed to reject vet document'
+    };
+  }
+};

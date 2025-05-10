@@ -59,6 +59,7 @@ model User {
   petTips            PetTip[]           // Pet health tips
   products           PetProduct[]       // Pet products
   clinicUpdates      ClinicUpdate[]     // Clinic updates/announcements
+  vetDocuments       VetDocument[]      // Vet licenses and certificates
 }
 
 model Profile {
@@ -702,6 +703,42 @@ enum ProductCategory {
   CAGE
   AQUARIUM
   CLOTHING
+  OTHER
+}
+
+// Vet Document model for veterinarian specific documentation
+model VetDocument {
+  id                 String         @id @default(uuid())
+  documentType       VetDocumentType
+  documentUrl        String         // URL to stored document
+  status             VerificationStatus @default(PENDING)
+  issueDate          DateTime?
+  expiryDate         DateTime?
+  issuingAuthority   String?
+  licenseNumber      String?
+  specialization     String?
+  rejectionReason    String?        @db.Text
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  
+  // Relations
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+// New enum for vet document types
+enum VetDocumentType {
+  VETERINARY_DEGREE
+  PRACTICE_LICENSE
+  BOARD_CERTIFICATION
+  CONTINUING_EDUCATION
+  SPECIALTY_CERTIFICATION
+  CLINIC_REGISTRATION
+  INSURANCE_DOCUMENT
+  REFERENCE_LETTER
+  PROFESSIONAL_MEMBERSHIP
   OTHER
 }
 

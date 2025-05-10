@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { adminLogin, getPendingVerifications, approveVerification, rejectVerification, createAdmin } from '../functionControllers/adminFunctionController';
+import { adminLogin, getPendingVerifications, approveVerification, rejectVerification, createAdmin, registerVet } from '../functionControllers/adminFunctionController';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const handleAdminLogin = async (req: Request, res: Response): Promise<void> => {
@@ -184,5 +184,162 @@ export const handleCreateAdmin = async (req: Request, res: Response): Promise<vo
       return;
     }
     res.status(500).json({ success: false, message: 'Failed to create admin user' });
+  }
+};
+
+export const handleRegisterVet = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const { email, password, firstName, lastName, username } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !firstName || !lastName || !username) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'All fields (email, password, firstName, lastName, username) are required' 
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+      return;
+    }
+
+    // Password validation (at least 6 characters)
+    if (password.length < 6) {
+      res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
+      return;
+    }
+
+    const result = await registerVet({
+      email,
+      password,
+      firstName,
+      lastName,
+      username
+    });
+    
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to register vet user' });
+  }
+};
+
+export const handleGetPendingVetDocuments = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ success: false, message: 'Invalid page or limit parameters' });
+      return;
+    }
+
+    // This will work after running migrations to add the VetDocument model
+    // const result = await getPendingVetDocuments(page, limit);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to get pending vet documents' });
+  }
+};
+
+export const handleApproveVetDocument = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const { documentId } = req.params;
+
+    if (!documentId) {
+      res.status(400).json({ success: false, message: 'Document ID is required' });
+      return;
+    }
+
+    // This will work after running migrations to add the VetDocument model
+    // const result = await approveVetDocument(documentId);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to approve vet document' });
+  }
+};
+
+export const handleRejectVetDocument = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const { documentId } = req.params;
+    const { reason } = req.body;
+
+    if (!documentId) {
+      res.status(400).json({ success: false, message: 'Document ID is required' });
+      return;
+    }
+
+    if (!reason) {
+      res.status(400).json({ success: false, message: 'Rejection reason is required' });
+      return;
+    }
+
+    // This will work after running migrations to add the VetDocument model
+    // const result = await rejectVetDocument(documentId, reason);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to reject vet document' });
   }
 };

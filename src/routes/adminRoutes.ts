@@ -1,5 +1,15 @@
 import { Router } from "express";
-import { handleAdminLogin, handleGetPendingVerifications, handleApproveVerification, handleRejectVerification, handleCreateAdmin } from "../httpControllers/adminHttpController";
+import { 
+  handleAdminLogin, 
+  handleGetPendingVerifications, 
+  handleApproveVerification, 
+  handleRejectVerification, 
+  handleCreateAdmin, 
+  handleRegisterVet, 
+  handleGetPendingVetDocuments,
+  handleApproveVetDocument,
+  handleRejectVetDocument
+} from "../httpControllers/adminHttpController";
 import { authenticate, adminOnly } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -12,6 +22,14 @@ router.post('/create', handleCreateAdmin);
 router.get('/verifications', authenticate, adminOnly, handleGetPendingVerifications);
 router.put('/verifications/:verificationId/approve', authenticate, adminOnly, handleApproveVerification);
 router.put('/verifications/:verificationId/reject', authenticate, adminOnly, handleRejectVerification);
+
+// Admin user management routes
+router.post('/register-vet', authenticate, adminOnly, handleRegisterVet);
+
+// Admin vet document management routes
+router.get('/vet-documents', authenticate, adminOnly, handleGetPendingVetDocuments);
+router.put('/vet-documents/:documentId/approve', authenticate, adminOnly, handleApproveVetDocument);
+router.put('/vet-documents/:documentId/reject', authenticate, adminOnly, handleRejectVetDocument);
 
 export default router;
 
