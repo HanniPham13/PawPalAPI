@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { adminLogin, getPendingVerifications, approveVerification, rejectVerification, createAdmin, registerVet } from '../functionControllers/adminFunctionController';
+import { adminLogin, getPendingVerifications, approveVerification, rejectVerification, createAdmin, registerVet, getPendingMedicalRecords, approveMedicalRecord, rejectMedicalRecord } from '../functionControllers/adminFunctionController';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const handleAdminLogin = async (req: Request, res: Response): Promise<void> => {
@@ -341,5 +341,108 @@ export const handleRejectVetDocument = async (req: AuthRequest, res: Response): 
       return;
     }
     res.status(500).json({ success: false, message: 'Failed to reject vet document' });
+  }
+};
+
+export const handleGetPendingMedicalRecords = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ success: false, message: 'Invalid page or limit parameters' });
+      return;
+    }
+
+    // This will work after running migrations to add the verification fields to MedicalRecord model
+    // const result = await getPendingMedicalRecords(page, limit);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to get pending medical records' });
+  }
+};
+
+export const handleApproveMedicalRecord = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const { recordId } = req.params;
+
+    if (!recordId) {
+      res.status(400).json({ success: false, message: 'Medical record ID is required' });
+      return;
+    }
+
+    // This will work after running migrations
+    // const result = await approveMedicalRecord(recordId, req.user.id);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to approve medical record' });
+  }
+};
+
+export const handleRejectMedicalRecord = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
+      return;
+    }
+
+    const { recordId } = req.params;
+    const { reason } = req.body;
+
+    if (!recordId) {
+      res.status(400).json({ success: false, message: 'Medical record ID is required' });
+      return;
+    }
+
+    if (!reason) {
+      res.status(400).json({ success: false, message: 'Rejection reason is required' });
+      return;
+    }
+
+    // This will work after running migrations
+    // const result = await rejectMedicalRecord(recordId, req.user.id, reason);
+    
+    // Temporary placeholder response until migrations are run
+    res.status(501).json({
+      success: false,
+      message: 'Feature not yet implemented - requires database migration'
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to reject medical record' });
   }
 };

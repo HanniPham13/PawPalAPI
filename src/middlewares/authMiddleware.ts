@@ -76,3 +76,13 @@ export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction): 
   
   next();
 };
+
+// Vet only middleware
+export const vetOnly = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user?.role !== 'VET') {
+    res.status(403).json({ success: false, message: 'Unauthorized. Vet access only.' });
+    return;
+  }
+  
+  next();
+};

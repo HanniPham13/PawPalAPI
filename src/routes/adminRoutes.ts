@@ -8,7 +8,10 @@ import {
   handleRegisterVet, 
   handleGetPendingVetDocuments,
   handleApproveVetDocument,
-  handleRejectVetDocument
+  handleRejectVetDocument,
+  handleGetPendingMedicalRecords,
+  handleApproveMedicalRecord,
+  handleRejectMedicalRecord
 } from "../httpControllers/adminHttpController";
 import { authenticate, adminOnly } from "../middlewares/authMiddleware";
 
@@ -30,6 +33,11 @@ router.post('/register-vet', authenticate, adminOnly, handleRegisterVet);
 router.get('/vet-documents', authenticate, adminOnly, handleGetPendingVetDocuments);
 router.put('/vet-documents/:documentId/approve', authenticate, adminOnly, handleApproveVetDocument);
 router.put('/vet-documents/:documentId/reject', authenticate, adminOnly, handleRejectVetDocument);
+
+// Admin pet medical record verification routes
+router.get('/medical-records', authenticate, adminOnly, handleGetPendingMedicalRecords);
+router.put('/medical-records/:recordId/approve', authenticate, adminOnly, handleApproveMedicalRecord);
+router.put('/medical-records/:recordId/reject', authenticate, adminOnly, handleRejectMedicalRecord);
 
 export default router;
 

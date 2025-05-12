@@ -645,3 +645,212 @@ export const rejectVetDocument = async (documentId: string, reason: string): Pro
     };
   }
 };
+
+// Function to get pending medical records
+export const getPendingMedicalRecords = async (page: number = 1, limit: number = 10): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+  hasMore: boolean;
+}> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const medicalRecords = await prisma.medicalRecord.findMany({
+      where: {
+        verificationStatus: 'PENDING'
+      },
+      include: {
+        petProfile: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            breed: true,
+            profilePicture: true,
+            owner: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profile: {
+                  select: {
+                    profilePictureUrl: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip,
+      take: limit + 1
+    });
+
+    const hasMore = medicalRecords.length > limit;
+    const recordsToReturn = hasMore ? medicalRecords.slice(0, limit) : medicalRecords;
+
+    return {
+      success: true,
+      message: 'Pending medical records retrieved successfully',
+      data: recordsToReturn,
+      hasMore
+    };
+  } catch (error) {
+    console.error('Get pending medical records error:', error);
+    return {
+      success: false,
+      message: 'Failed to retrieve pending medical records',
+      hasMore: false
+    };
+  }
+};
+
+// Function to approve a medical record
+export const approveMedicalRecord = async (recordId: string, adminId: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the medical record
+    const medicalRecord = await prisma.medicalRecord.findUnique({
+      where: { id: recordId },
+      include: { 
+        petProfile: {
+          include: {
+            owner: true
+          }
+        }
+      }
+    });
+
+    if (!medicalRecord) {
+      return {
+        success: false,
+        message: 'Medical record not found'
+      };
+    }
+
+    // Allow approving if status is PENDING or REJECTED
+    if (medicalRecord.verificationStatus !== 'PENDING' && medicalRecord.verificationStatus !== 'REJECTED') {
+      return {
+        success: false,
+        message: `Medical record already ${medicalRecord.verificationStatus.toLowerCase()}`
+      };
+    }
+
+    // Update medical record status to APPROVED
+    const updatedRecord = await prisma.medicalRecord.update({
+      where: { id: recordId },
+      data: { 
+        verificationStatus: 'APPROVED',
+        verifiedById: adminId,
+        verifiedAt: new Date(),
+        rejectionReason: null // Clear rejection reason if it exists
+      }
+    });
+
+    // Create notification for the pet owner
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: medicalRecord.verificationStatus === 'REJECTED' ? 
+          `Your previously rejected medical record for ${medicalRecord.petProfile.name} has been reconsidered and approved.` : 
+          `Your medical record for ${medicalRecord.petProfile.name} has been approved.`,
+        receiverId: medicalRecord.petProfile.owner.id,
+        senderId: adminId
+      }
+    });
+
+    return {
+      success: true,
+      message: medicalRecord.verificationStatus === 'REJECTED' ? 
+        'Medical record status reversed from rejected to approved' : 
+        'Medical record approved successfully',
+      data: updatedRecord
+    };
+  } catch (error) {
+    console.error('Approve medical record error:', error);
+    return {
+      success: false,
+      message: 'Failed to approve medical record'
+    };
+  }
+};
+
+// Function to reject a medical record
+export const rejectMedicalRecord = async (recordId: string, adminId: string, reason: string): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  try {
+    // Get the medical record
+    const medicalRecord = await prisma.medicalRecord.findUnique({
+      where: { id: recordId },
+      include: { 
+        petProfile: {
+          include: {
+            owner: true
+          }
+        }
+      }
+    });
+
+    if (!medicalRecord) {
+      return {
+        success: false,
+        message: 'Medical record not found'
+      };
+    }
+
+    // Allow rejecting if status is PENDING or APPROVED
+    if (medicalRecord.verificationStatus !== 'PENDING' && medicalRecord.verificationStatus !== 'APPROVED') {
+      return {
+        success: false,
+        message: `Medical record already ${medicalRecord.verificationStatus.toLowerCase()}`
+      };
+    }
+
+    // Update medical record status to REJECTED
+    const updatedRecord = await prisma.medicalRecord.update({
+      where: { id: recordId },
+      data: { 
+        verificationStatus: 'REJECTED',
+        verifiedById: adminId,
+        verifiedAt: new Date(),
+        rejectionReason: reason
+      }
+    });
+
+    // Create notification for the pet owner
+    await prisma.notification.create({
+      data: {
+        type: 'VERIFICATION',
+        message: `Your medical record for ${medicalRecord.petProfile.name} has been rejected. Reason: ${reason}`,
+        receiverId: medicalRecord.petProfile.owner.id,
+        senderId: adminId
+      }
+    });
+
+    return {
+      success: true,
+      message: medicalRecord.verificationStatus === 'APPROVED' ? 
+        'Medical record status reversed from approved to rejected' : 
+        'Medical record rejected successfully',
+      data: updatedRecord
+    };
+  } catch (error) {
+    console.error('Reject medical record error:', error);
+    return {
+      success: false,
+      message: 'Failed to reject medical record'
+    };
+  }
+};

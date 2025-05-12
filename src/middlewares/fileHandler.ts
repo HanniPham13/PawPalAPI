@@ -12,9 +12,13 @@ const createUploadDirs = () => {
     'uploads/posts',
     'uploads/petProfile',     // Directory for pet profile pictures
     'uploads/medical',        // Directory for pet medical records
-    'uploads/verification',  // New directory for verification documents
-    'uploads/rehoming',      // New directory for rehoming files
-    'uploads/chat'          // New directory for chat files
+    'uploads/verification',   // New directory for verification documents
+    'uploads/rehoming',       // New directory for rehoming files
+    'uploads/chat',           // New directory for chat files
+    'uploads/clinics',         // Base directory for clinic files
+    'uploads/clinics/profiles', // Clinic profile pictures
+    'uploads/clinics/covers',   // Clinic cover pictures
+    'uploads/clinics/images'    // Other clinic images
   ];
   
   dirs.forEach(dir => {
@@ -44,9 +48,15 @@ const storage = multer.diskStorage({
     if (file.fieldname === 'profilePicture' && req.originalUrl.includes('/pet')) {
       // Pet profile pictures
       uploadPath += 'petProfile/';
+    } else if (file.fieldname === 'profilePicture' && req.originalUrl.includes('/vet/clinics')) {
+      // Clinic profile pictures
+      uploadPath += 'clinics/profiles/';
     } else if (file.fieldname === 'profilePicture') {
       // User profile pictures
       uploadPath += 'profiles/';
+    } else if (file.fieldname === 'coverPicture' && req.originalUrl.includes('/vet/clinics')) {
+      // Clinic cover pictures
+      uploadPath += 'clinics/covers/';
     } else if (file.fieldname === 'coverPicture') {
       uploadPath += 'covers/';
     } else if (file.fieldname === 'postImage') {
@@ -60,6 +70,9 @@ const storage = multer.diskStorage({
       uploadPath += 'rehoming/';
     } else if (file.fieldname === 'chatFile') {
       uploadPath += 'chat/';
+    } else if (file.fieldname === 'clinicImages') {
+      // Clinic images
+      uploadPath += 'clinics/images/';
     }
 
     // Create user-specific directory

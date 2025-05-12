@@ -7,6 +7,7 @@ import mainRoutes from './routes/mainRoutes';
 import adminRouter from './routes/adminRoutes';
 import userRoutes from './routes/userRoutes';
 import petRoutes from './routes/petRoutes';
+import vetRoutes from './routes/vetRoutes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/pet', petRoutes);
 app.use('/api', mainRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/user', userRoutes);
+app.use('/api/vet', vetRoutes);
 app.get('/', (req: Request, res: Response) => {
   res.send('API is running!');
 });

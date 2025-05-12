@@ -60,6 +60,7 @@ model User {
   products           PetProduct[]       // Pet products
   clinicUpdates      ClinicUpdate[]     // Clinic updates/announcements
   vetDocuments       VetDocument[]      // Vet licenses and certificates
+  verifiedMedicalRecords MedicalRecord[] // Medical records verified by this user
 }
 
 model Profile {
@@ -102,7 +103,8 @@ model Clinic {
   verificationStatus VerificationStatus @default(PENDING)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  
+  profilePictureUrl  String?
+  coverPictureUrl    String?
   // Relations
   ownerId            String    // Clinic owner (vet or admin)
   owner              User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -442,12 +444,19 @@ model MedicalRecord {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   
+  // Verification fields
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+  rejectionReason    String?   @db.Text
+  
   // Relations
   petProfileId       String
-  petProfile         PetProfile       @relation(fields: [petProfileId], references: [id], onDelete: Cascade)
-  verifiedBy         String?   // ID of vet/admin who verified
+  petProfile         PetProfile @relation(fields: [petProfileId], references: [id], onDelete: Cascade)
+  verifiedById       String?   // ID of vet/admin who verified
+  verifiedBy         User?     @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
   
   @@index([petProfileId])
+  @@index([verifiedById])
 }
 
 // Verification documents uploaded by users
