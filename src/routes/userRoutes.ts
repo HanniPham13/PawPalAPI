@@ -2,8 +2,48 @@ import { Router } from 'express';
 import { authenticate } from '../middlewares/authMiddleware';
 import { upload } from '../middlewares/fileHandler';
 import * as userHttpController from '../httpControllers/userHttpController';
+import { Request, Response } from 'express';
+import { AuthRequest } from '../middlewares/authMiddleware';
+import { prisma } from '../index';
 
 const router = Router();
+
+// Get current user profile - temporary direct implementation 
+router.get('/profile', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    // Get the user with their profile
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        coverPicture: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // Extract password and other sensitive fields
+    const { password, ...userData } = user;
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'User profile retrieved successfully',
+      data: userData
+    });
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve user profile' });
+  }
+});
 
 // Profile picture routes
 router.post('/profile-picture', authenticate, upload.single('profilePicture'), userHttpController.handleUploadProfilePicture);

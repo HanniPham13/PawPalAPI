@@ -1164,3 +1164,34 @@ export const updateAdoptionApplicationStatus = async (
     throw new Error('Failed to update application status');
   }
 };
+
+export const getUserProfile = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        coverPicture: true
+      }
+    });
+
+    if (!user) {
+      return { 
+        success: false, 
+        message: 'User not found' 
+      };
+    }
+
+    // Remove sensitive information
+    const { password, ...userData } = user;
+
+    return { 
+      success: true, 
+      message: 'User profile retrieved successfully',
+      data: userData
+    };
+  } catch (error) {
+    console.error('Error retrieving user profile:', error);
+    throw new Error('Failed to retrieve user profile');
+  }
+};

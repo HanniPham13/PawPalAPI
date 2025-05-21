@@ -1,6 +1,25 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import * as userFunctionController from '../functionControllers/userFunctionController';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export const handleGetUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    const result = await userFunctionController.getUserProfile(userId);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve user profile' });
+  }
+};
 
 export const handleUploadProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -544,3 +563,4 @@ export const handleRejectAdoptionApplication = async (req: AuthRequest, res: Res
     res.status(500).json({ success: false, message: 'Failed to reject application' });
   }
 };
+
