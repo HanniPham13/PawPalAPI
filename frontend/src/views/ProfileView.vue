@@ -29,15 +29,17 @@ const fetchProfile = async () => {
   isLoading.value = true
   error.value = ''
   try {
-    console.log('Fetching profile data...')
+    console.log('[ProfileView] Attempting to fetch profile data...')
     const result = await authStore.fetchUserProfile()
-    console.log('Profile fetch result:', result)
+    console.log('[ProfileView] Raw result from authStore.fetchUserProfile():', JSON.parse(JSON.stringify(result)))
     if (!result.success) {
       error.value = result.message || 'Failed to load profile'
-      console.error('Error loading profile:', error.value)
+      console.error('[ProfileView] Error loading profile from authStore:', error.value, 'Full result:', JSON.parse(JSON.stringify(result)))
     }
+    console.log('[ProfileView] authStore.user after fetchUserProfile:', JSON.parse(JSON.stringify(authStore.user)))
     user.value = authStore.user
-    console.log('User data:', user.value)
+    console.log('[ProfileView] Local user.value after assignment:', JSON.parse(JSON.stringify(user.value)))
+
     if (user.value) {
       formData.value = {
         firstName: user.value.firstName || '',
@@ -45,12 +47,17 @@ const fetchProfile = async () => {
         username: user.value.username || '',
         bio: user.value.bio || ''
       }
+      console.log('[ProfileView] formData.value populated:', JSON.parse(JSON.stringify(formData.value)))
+    } else {
+      console.warn('[ProfileView] user.value is null or undefined after fetch and assignment.')
+      error.value = error.value || 'User data not found after fetch.'
     }
   } catch (err) {
-    console.error('Exception while loading profile:', err)
+    console.error('[ProfileView] Exception during fetchProfile:', err)
     error.value = 'An error occurred while loading your profile'
   } finally {
     isLoading.value = false
+    console.log('[ProfileView] fetchProfile finished. isLoading:', isLoading.value, 'Error:', error.value)
   }
 }
 
