@@ -366,6 +366,26 @@ export const getFeedPosts = async (userId: string, page: number = 1, limit: numb
               }
             }
           }
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                profile: {
+                  select: {
+                    profilePictureUrl: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
         }
       },
       orderBy: [

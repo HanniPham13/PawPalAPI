@@ -72,11 +72,11 @@ const loadMorePosts = async () => {
   }
 }
 
-// Pull to refresh functionality (would work with touch events in a real mobile app)
+// Pull to refresh functionality
 const handleRefresh = async () => {
   try {
     isLoading.value = true
-    await feedStore.fetchFeedPosts(true)
+    await feedStore.fetchFeedPosts(true) // true = refresh
   } catch (error) {
     console.error('Error refreshing feed:', error)
   } finally {
@@ -97,6 +97,8 @@ const createPost = async () => {
     
     if (result.success) {
       newPostContent.value = ''
+      
+      // Refresh the feed to ensure proper order
       await feedStore.fetchFeedPosts(true)
       
       // Animate the new post indicator

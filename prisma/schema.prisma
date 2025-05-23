@@ -21,7 +21,6 @@ model User {
   lastName           String
   bio                String?             @db.Text
   isVerified         Boolean             @default(false)
-  loggedInAsGoogle   Boolean             @default(false)
   isEmailVerified    Boolean             @default(false)
   verificationCode   String?
   verificationLevel  VerificationLevel   @default(BASIC)

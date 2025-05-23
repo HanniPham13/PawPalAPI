@@ -281,9 +281,15 @@ export const createSocialPost = async (userId: string, data: {
             username: true,
             firstName: true,
             lastName: true,
+            verificationLevel: true,
             profile: {
               select: {
                 profilePictureUrl: true
+              }
+            },
+            followers: {
+              select: {
+                followerId: true
               }
             }
           }
@@ -295,11 +301,57 @@ export const createSocialPost = async (userId: string, data: {
             profilePicture: true
           }
         },
-        SocialPostImage: true
+        SocialPostImage: true,
+        _count: {
+          select: {
+            reactions: true,
+            comments: true
+          }
+        },
+        reactions: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true
+              }
+            }
+          }
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                profile: {
+                  select: {
+                    profilePictureUrl: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       }
     });
 
-    return { success: true, data: post };
+    // Calculate if the post author is being followed by the current user
+    const isFollowing = post.author.followers.some(follower => follower.followerId === userId);
+
+    // Add isFollowing flag to the response
+    const postWithFollowingStatus = {
+      ...post,
+      isFollowing,
+      isVerified: ['VERIFIED', 'PURRPARENT', 'SUPER_ADOPTER', 'VET'].includes(post.author.verificationLevel)
+    };
+
+    return { success: true, data: postWithFollowingStatus };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);

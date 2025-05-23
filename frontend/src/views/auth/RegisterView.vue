@@ -132,22 +132,8 @@ const handleRegister = async () => {
         </div>
         <button type="submit" class="form-btn mt-4" :disabled="isLoading">
           {{ isLoading ? 'Signing up...' : 'Sign Up' }}
-          </button>
+        </button>
       </form>
-      <div class="divider">
-        <span>OR</span>
-        </div>
-      <div class="social-row">
-        <button class="social-btn google" aria-label="Sign up with Google">
-          <svg viewBox="0 0 24 24" class="icon"><g><path fill="#EA4335" d="M12 10.8v3.2h4.5c-.2 1.2-1.4 3.5-4.5 3.5-2.7 0-5-2.2-5-5s2.3-5 5-5c1.5 0 2.5.6 3.1 1.2l2.1-2.1C15.7 5.6 14 4.8 12 4.8 7.6 4.8 4 8.4 4 12s3.6 7.2 8 7.2c4.6 0 7.6-3.2 7.6-7.7 0-.5-.1-.9-.2-1.3H12z"/><path fill="#34A853" d="M12 21c2.4 0 4.4-.8 5.9-2.1l-2.8-2.3c-.8.5-1.8.8-3.1.8-2.4 0-4.4-1.6-5.1-3.8H4.1v2.4C5.6 19.2 8.6 21 12 21z"/><path fill="#4A90E2" d="M17.9 18.9c1.6-1.5 2.6-3.7 2.6-6.1 0-.5-.1-.9-.2-1.3H12v2.6h4.1c-.2 1.2-1.4 3.5-4.1 3.5-2.7 0-5-2.2-5-5s2.3-5 5-5c1.5 0 2.5.6 3.1 1.2l2.1-2.1C15.7 5.6 14 4.8 12 4.8 7.6 4.8 4 8.4 4 12s3.6 7.2 8 7.2c2.4 0 4.4-.8 5.9-2.1l-2.8-2.3z"/></g></svg>
-        </button>
-        <button class="social-btn facebook" aria-label="Sign up with Facebook">
-          <svg viewBox="0 0 24 24" class="icon"><path fill="#1877F3" d="M22.675 0h-21.35C.6 0 0 .6 0 1.326v21.348C0 23.4.6 24 1.325 24H12.82v-9.294H9.692v-3.622h3.127V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.4 24 24 23.4 24 22.674V1.326C24 .6 23.4 0 22.675 0"/></svg>
-        </button>
-        <button class="social-btn linkedin" aria-label="Sign up with LinkedIn">
-          <svg viewBox="0 0 24 24" class="icon"><path fill="#0077B5" d="M20.447 20.452h-3.554v-5.569c0-1.327-.027-3.037-1.849-3.037-1.851 0-2.132 1.445-2.132 2.939v5.667H9.358V9h3.414v1.561h.049c.476-.899 1.637-1.849 3.37-1.849 3.602 0 4.267 2.368 4.267 5.455v6.285zM5.337 7.433c-1.144 0-2.07-.926-2.07-2.07 0-1.143.926-2.07 2.07-2.07 1.143 0 2.07.927 2.07 2.07 0 1.144-.927 2.07-2.07 2.07zm1.777 13.019H3.56V9h3.554v11.452z"/></svg>
-        </button>
-      </div>
       <p class="login-link">Already a user? <router-link to="/login">LOGIN</router-link></p>
     </div>
   </AuthLayout2>
@@ -258,57 +244,6 @@ const handleRegister = async () => {
   width: 100%;
   text-align: center;
   font-size: 1rem;
-}
-.divider {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  margin: 1.5rem 0 1rem 0;
-}
-.divider hr {
-  flex: 1;
-  border: none;
-  border-top: 1.5px solid #e0e0e0;
-  margin: 0;
-}
-.divider span {
-  margin: 0 1rem;
-  color: #b0b0b0;
-  font-weight: 600;
-  font-size: 0.95rem;
-  background: #fff;
-  padding: 0 0.75rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 4px 0 rgba(31, 38, 135, 0.04);
-}
-.social-row {
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-  margin-bottom: 1.2rem;
-}
-.social-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #f8f9fa;
-  border: 1.5px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: box-shadow 0.2s, border 0.2s, transform 0.1s;
-  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.06);
-  cursor: pointer;
-}
-.social-btn:hover {
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.12);
-  border: 1.5px solid #ff5e9c;
-  transform: scale(1.08);
-}
-.icon {
-  width: 24px;
-  height: 24px;
-  display: block;
 }
 .login-link {
   text-align: center;
