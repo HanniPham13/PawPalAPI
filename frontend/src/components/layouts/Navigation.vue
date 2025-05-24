@@ -42,6 +42,8 @@ const logout = () => {
         <div class="nav-links">
           <template v-if="isAuthenticated">
             <router-link to="/feed" class="nav-link" active-class="nav-link-active">Feed</router-link>
+            <router-link to="/my-pets" class="nav-link" active-class="nav-link-active">My Pets</router-link>
+            <router-link to="/create-adoption-post" class="nav-link highlight-link" active-class="nav-link-active">Post for Adoption</router-link>
             <router-link to="/saved" class="nav-link" active-class="nav-link-active">Saved</router-link>
             <router-link to="/messages" class="nav-link" active-class="nav-link-active">Messages</router-link>
             <router-link to="/followers" class="nav-link" active-class="nav-link-active">Followers</router-link>
@@ -68,6 +70,8 @@ const logout = () => {
       <div class="mobile-menu-links">
         <template v-if="isAuthenticated">
           <router-link to="/feed" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Feed</router-link>
+          <router-link to="/my-pets" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">My Pets</router-link>
+          <router-link to="/create-adoption-post" class="mobile-link highlight-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Post for Adoption</router-link>
           <router-link to="/saved" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Saved</router-link>
           <router-link to="/messages" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Messages</router-link>
           <router-link to="/followers" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Followers</router-link>
@@ -139,6 +143,17 @@ const logout = () => {
 .nav-link:hover, .nav-link:focus, .nav-link-active {
   color: #ff5e9c;
   background: #ffe0ef;
+}
+.nav-link.highlight-link {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.nav-link.highlight-link:hover {
+  background-color: #ffe0ef;
+  color: #ff5e9c !important;
+}
+.nav-link.highlight-link.nav-link-active {
+  background-color: #ffe0ef;
+  color: #ff5e9c !important;
 }
 .signout-btn {
   margin-left: 1rem;
@@ -226,6 +241,17 @@ const logout = () => {
 .mobile-link:hover, .mobile-link:focus, .nav-link-active {
   color: #ff5e9c;
   background: #ffe0ef;
+}
+.mobile-link.highlight-link {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.mobile-link.highlight-link:hover {
+  background-color: #ffe0ef;
+  color: #ff5e9c !important;
+}
+.mobile-link.highlight-link.nav-link-active {
+  background-color: #ffe0ef;
+  color: #ff5e9c !important;
 }
 .mobile-signout {
   margin-top: 0.7rem;

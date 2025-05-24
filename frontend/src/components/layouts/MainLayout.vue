@@ -2,6 +2,9 @@
 import Navigation from './Navigation.vue'
 import { onMounted } from 'vue'
 import { gsap } from 'gsap'
+import { useAuthStore } from '../../stores/auth'
+
+const authStore = useAuthStore()
 
 onMounted(() => {
   // Animate the content entrance
@@ -29,4 +32,12 @@ onMounted(() => {
       </div>
     </footer>
   </div>
-</template> 
+</template>
+
+<style scoped>
+/* Highlight link styles are now handled in Navigation.vue */
+
+.user-menu {
+  /* ... existing code ... */
+}
+</style>

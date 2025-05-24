@@ -86,6 +86,12 @@ const router = createRouter({
       name: 'user-profile',
       component: () => import('../views/UserProfileView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/create-adoption-post',
+      name: 'create-adoption-post',
+      component: () => import('../views/adoption/CreateAdoptionPostView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

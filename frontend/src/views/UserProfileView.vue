@@ -1,36 +1,95 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import MainLayout from '../components/layouts/MainLayout.vue'
+import { useSocialStore } from '../stores/social'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
-const userId = route.params.userId as string
+const userId = ref(route.params.userId as string)
 const user = ref<any>(null)
 const isLoading = ref(true)
 const error = ref('')
 
-const fetchUserProfile = async () => {
+const socialStore = useSocialStore()
+const authStore = useAuthStore()
+const isFollowLoading = ref(false)
+const isHovering = ref(false)
+
+const fetchUserProfile = async (id: string) => {
   isLoading.value = true
   error.value = ''
   try {
-    const response = await axios.get(`/api/user/profile/${userId}`)
+    const response = await axios.get(`/api/user/profile/${id}`)
     if (response.data.success) {
       user.value = response.data.data
     } else {
       error.value = response.data.message || 'Failed to load profile'
     }
   } catch (err: any) {
-    console.error('Error fetching user profile:', err)
+    console.error('[UserProfileView] Error fetching user profile:', err)
     error.value = err.response?.data?.message || 'An error occurred while loading the profile'
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(() => {
-  fetchUserProfile()
+const isCurrentUser = computed(() => {
+  return authStore.user?.id === userId.value
 })
+
+const isFollowing = computed(() => {
+  if (!userId.value || !socialStore.following) return false
+  return socialStore.following.some(u => u.id === userId.value)
+})
+
+const handleFollow = async () => {
+  if (isFollowLoading.value || isCurrentUser.value || !userId.value) {
+    console.warn('[UserProfileView] Follow attempt blocked:', { isFollowLoading: isFollowLoading.value, isCurrentUser: isCurrentUser.value, userId: userId.value })
+    return
+  }
+  isFollowLoading.value = true
+  try {
+    let result
+    if (isFollowing.value) {
+      console.log(`[UserProfileView] Unfollowing user: ${userId.value}`)
+      result = await socialStore.unfollowUser(userId.value)
+      if (result.success && user.value && user.value._count) {
+        user.value._count.followers = Math.max(0, (Number(user.value._count.followers) || 1) - 1)
+      }
+    } else {
+      console.log(`[UserProfileView] Following user: ${userId.value}`)
+      result = await socialStore.followUser(userId.value)
+      if (result.success && user.value && user.value._count) {
+        user.value._count.followers = (Number(user.value._count.followers) || 0) + 1
+      }
+    }
+    if (!result.success) {
+      console.error('[UserProfileView] Follow/Unfollow action failed:', result.message)
+      // Optionally set a user-facing error message here
+    }
+  } catch (e: any) {
+    console.error('[UserProfileView] Error in handleFollow:', e)
+    error.value = e.message || 'An error occurred during the follow action.'
+  } finally {
+    isFollowLoading.value = false
+    console.log(`[UserProfileView] handleFollow finished, isFollowLoading: ${isFollowLoading.value}`)
+  }
+}
+
+watch(() => route.params.userId, (newUserId) => {
+  const id = newUserId as string
+  if (id) {
+    userId.value = id
+    fetchUserProfile(id)
+    // Refresh following list for the current auth user, 
+    // as `isFollowing` depends on it for the new profile user.
+    socialStore.fetchFollowing(true) 
+  }
+}, { immediate: true })
+
+// onMounted is handled by immediate watch now
 </script>
 
 <template>
@@ -43,7 +102,7 @@ onMounted(() => {
         </div>
         <div v-else-if="error" class="profile-error">
           <p>{{ error }}</p>
-          <button @click="fetchUserProfile" class="retry-btn">Retry</button>
+          <button @click="fetchUserProfile(userId)" class="retry-btn">Retry</button>
         </div>
         <div v-else-if="user" class="profile-card">
           <!-- Cover photo -->
@@ -78,7 +137,25 @@ onMounted(() => {
                 </h1>
                 <div class="profile-username">@{{ user.username }}</div>
               </div>
-              <button class="follow-btn">Follow</button>
+              <button
+                v-if="!isCurrentUser"
+                :class="[isFollowing ? 'following-btn' : 'follow-btn']"
+                :disabled="isFollowLoading"
+                @click="handleFollow"
+                @mouseenter="isHovering = true"
+                @mouseleave="isHovering = false"
+              >
+                <template v-if="isFollowing">
+                  <span v-if="!isHovering">
+                    <svg style="vertical-align: middle; margin-right: 0.4em;" width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#ff5e9c"/><path d="M6 10.5L9 13.5L14 8.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Following
+                  </span>
+                  <span v-else>Unfollow</span>
+                </template>
+                <template v-else>
+                  Follow
+                </template>
+              </button>
             </div>
             <div v-if="user.bio" class="profile-bio">{{ user.bio }}</div>
             <div class="profile-stats-row">
@@ -303,5 +380,25 @@ onMounted(() => {
     height: 90px;
     font-size: 1.5rem;
   }
+}
+.following-btn {
+  background: #fff;
+  color: #ff5e9c;
+  border: 2px solid #ff5e9c;
+  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(255, 94, 156, 0.10);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+.following-btn:hover {
+  background: #ffe0ef;
+  color: #d72660;
+  border-color: #d72660;
 }
 </style> 

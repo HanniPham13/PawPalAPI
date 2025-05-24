@@ -74,6 +74,13 @@ router.get('/profile/:userId', authenticate, async (req: AuthRequest, res: Respo
     // Extract password and other sensitive fields
     const { password, email, ...userData } = user;
 
+    // Swap follower and following counts if _count exists
+    if (userData._count) {
+      const tempFollowers = userData._count.followers;
+      userData._count.followers = userData._count.following;
+      userData._count.following = tempFollowers;
+    }
+
     res.status(200).json({ 
       success: true, 
       message: 'User profile retrieved successfully',
