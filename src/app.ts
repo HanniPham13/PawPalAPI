@@ -20,11 +20,12 @@ app.use('/api/user', userRoutes);
 app.use('/api/main', mainRoutes);
 app.use('/api/pet', petProfileRoutes);
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pawpal';
+// MongoDB Atlas connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your_username:your_password@cluster0.mongodb.net/pawpal?retryWrites=true&w=majority';
+
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Connected to MongoDB Atlas');
   })
   .catch((error: mongoose.Error) => {
     console.error('MongoDB connection error:', error);

@@ -1,7 +1,5 @@
 import { Request } from 'express';
 import PetProfile, { IPetProfile } from '../models/PetProfile';
-import { uploadToS3 } from '../utils/s3';
-import { v4 as uuidv4 } from 'uuid';
 
 export const createPetProfile = async (req: Request, userId: string): Promise<IPetProfile> => {
   const {
@@ -12,15 +10,9 @@ export const createPetProfile = async (req: Request, userId: string): Promise<IP
     gender,
     size,
     color,
-    description
+    description,
+    profilePicture // Now expecting a base64 string
   } = req.body;
-
-  let profilePicture: string | undefined;
-
-  if (req.file) {
-    const key = `pet-profiles/${userId}/${uuidv4()}-${req.file.originalname}`;
-    profilePicture = await uploadToS3(req.file.buffer, key);
-  }
 
   const petProfile = new PetProfile({
     owner: userId,
@@ -54,15 +46,9 @@ export const updatePetProfile = async (req: Request, userId: string, petId: stri
     size,
     color,
     description,
-    isAdoptable
+    isAdoptable,
+    profilePicture // Now expecting a base64 string
   } = req.body;
-
-  let profilePicture = petProfile.profilePicture;
-
-  if (req.file) {
-    const key = `pet-profiles/${userId}/${uuidv4()}-${req.file.originalname}`;
-    profilePicture = await uploadToS3(req.file.buffer, key);
-  }
 
   Object.assign(petProfile, {
     name,

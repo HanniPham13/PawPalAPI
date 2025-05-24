@@ -1,5 +1,4 @@
 import express from 'express';
-import multer from 'multer';
 import { authenticateToken } from '../middleware/auth';
 import {
   createPetProfileHandler,
@@ -10,13 +9,11 @@ import {
 } from '../httpControllers/petProfileHttpController';
 
 const router = express.Router();
-const upload = multer();
 
 // Create a new pet profile
 router.post(
   '/profile',
   authenticateToken,
-  upload.single('profilePicture'),
   createPetProfileHandler
 );
 
@@ -24,7 +21,6 @@ router.post(
 router.put(
   '/profile/:id',
   authenticateToken,
-  upload.single('profilePicture'),
   updatePetProfileHandler
 );
 
