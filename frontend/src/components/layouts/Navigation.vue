@@ -42,8 +42,14 @@ const logout = () => {
         <div class="nav-links">
           <template v-if="isAuthenticated">
             <router-link to="/feed" class="nav-link" active-class="nav-link-active">Feed</router-link>
-            <router-link to="/my-pets" class="nav-link" active-class="nav-link-active">My Pets</router-link>
-            <router-link to="/create-adoption-post" class="nav-link highlight-link" active-class="nav-link-active">Post for Adoption</router-link>
+            <router-link to="/adoption-feed" class="nav-link" active-class="nav-link-active">
+              <i class="fas fa-heart"></i>
+              <span>Adoption</span>
+            </router-link>
+            <router-link to="/my-pets" class="nav-link" active-class="nav-link-active">
+              <i class="fas fa-paw"></i>
+              <span>My Pets</span>
+            </router-link>
             <router-link to="/saved" class="nav-link" active-class="nav-link-active">Saved</router-link>
             <router-link to="/messages" class="nav-link" active-class="nav-link-active">Messages</router-link>
             <router-link to="/followers" class="nav-link" active-class="nav-link-active">Followers</router-link>
@@ -70,8 +76,14 @@ const logout = () => {
       <div class="mobile-menu-links">
         <template v-if="isAuthenticated">
           <router-link to="/feed" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Feed</router-link>
-          <router-link to="/my-pets" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">My Pets</router-link>
-          <router-link to="/create-adoption-post" class="mobile-link highlight-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Post for Adoption</router-link>
+          <router-link to="/adoption-feed" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">
+            <i class="fas fa-heart"></i>
+            <span>Adoption</span>
+          </router-link>
+          <router-link to="/my-pets" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">
+            <i class="fas fa-paw"></i>
+            <span>My Pets</span>
+          </router-link>
           <router-link to="/saved" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Saved</router-link>
           <router-link to="/messages" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Messages</router-link>
           <router-link to="/followers" class="mobile-link" active-class="nav-link-active" @click="mobileMenuOpen = false">Followers</router-link>

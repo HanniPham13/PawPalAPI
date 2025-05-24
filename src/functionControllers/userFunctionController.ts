@@ -784,6 +784,78 @@ export const getUserAdoptionPosts = async (userId: string, page: number = 1, lim
   }
 };
 
+export const getAllAdoptionPosts = async (page: number = 1, limit: number = 10): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+  hasMore: boolean;
+}> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const adoptionPosts = await prisma.petAdoptionPost.findMany({
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            verificationLevel: true,
+            profile: {
+              select: {
+                profilePictureUrl: true
+              }
+            }
+          }
+        },
+        petProfile: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            breed: true,
+            age: true,
+            gender: true,
+            size: true,
+            color: true,
+            description: true,
+            profilePicture: true
+          }
+        },
+        PetAdoptionPostImage: true,
+        _count: {
+          select: {
+            applications: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip,
+      take: limit + 1 // Fetch one extra to check if there are more posts
+    });
+
+    const hasMore = adoptionPosts.length > limit;
+    const postsToReturn = hasMore ? adoptionPosts.slice(0, limit) : adoptionPosts;
+
+    return {
+      success: true,
+      message: 'All adoption posts retrieved successfully',
+      data: postsToReturn,
+      hasMore
+    };
+  } catch (error) {
+    console.error('Get all adoption posts error:', error);
+    return {
+      success: false,
+      message: 'Failed to get adoption posts',
+      hasMore: false
+    };
+  }
+};
+
 export const deletePetAdoptionPost = async (userId: string, postId: string): Promise<{
   success: boolean;
   message: string;

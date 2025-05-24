@@ -92,6 +92,24 @@ const router = createRouter({
       name: 'create-adoption-post',
       component: () => import('../views/adoption/CreateAdoptionPostView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/adoption-feed',
+      name: 'adoption-feed',
+      component: () => import('../views/adoption/AdoptionFeedView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/my-pets',
+      name: 'my-pets',
+      component: () => import('../views/pets/MyPetsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/pet/:id/edit',
+      name: 'edit-pet',
+      component: () => import('../views/pets/EditPetProfileView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

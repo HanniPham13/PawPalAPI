@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import * as userFunctionController from '../functionControllers/userFunctionController';
 import { PrismaClient } from '@prisma/client';
@@ -561,6 +561,27 @@ export const handleRejectAdoptionApplication = async (req: AuthRequest, res: Res
       return;
     }
     res.status(500).json({ success: false, message: 'Failed to reject application' });
+  }
+};
+
+export const handleGetAllAdoptionPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (page < 1 || limit < 1) {
+      res.status(400).json({ success: false, message: 'Invalid page or limit parameters' });
+      return;
+    }
+
+    const result = await userFunctionController.getAllAdoptionPosts(page, limit);
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Failed to get adoption posts' });
   }
 };
 

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, defineEmits } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import MainLayout from '../../components/layouts/MainLayout.vue';
 import { useAuthStore } from '../../stores/auth';
 
 interface PetProfile {
@@ -25,6 +24,7 @@ const PetSizeEnum = ['SMALL', 'MEDIUM', 'LARGE', 'EXTRA_LARGE'];
 
 const router = useRouter();
 const authStore = useAuthStore();
+const emit = defineEmits(['postCreated']);
 
 const formData = reactive({
   title: '',
@@ -170,7 +170,7 @@ const handleSubmit = async () => {
       formData.petColor = '';
       selectedFiles.value = [];
       imagePreviews.value = [];
-      setTimeout(() => router.push('/feed'), 2000);
+      emit('postCreated');
     } else {
       formError.value = response.data.message || 'Failed to create adoption post.';
     }
@@ -188,161 +188,158 @@ onMounted(() => {
 </script>
 
 <template>
-  <MainLayout>
-    <div class="create-adoption-post-bg">
-      <div class="container">
-        <div class="form-card">
-          <h1 class="form-title">Put a Pet Up for Adoption</h1>
-          <p class="form-subtitle">
-            Fill in the details below to find a new loving home for a pet.
-          </p>
+  <div class="create-adoption-post-bg">
+    <div class="container">
+      <div class="form-card">
+        <h1 class="form-title">Put a Pet Up for Adoption</h1>
+        <p class="form-subtitle">
+          Fill in the details below to find a new loving home for a pet.
+        </p>
+        
+        <form @submit.prevent="handleSubmit" class="space-y-6">
+          <!-- Title -->
+          <div class="form-group">
+            <label for="title" class="form-label">Post Title*</label>
+            <input id="title" v-model="formData.title" type="text" class="form-input" required />
+          </div>
+
+          <!-- Link Existing Pet -->
+          <div class="form-group">
+            <label for="petProfileId" class="form-label">Link an Existing Pet (Optional)</label>
+            <select id="petProfileId" v-model="formData.petProfileId" class="form-input">
+              <option :value="null">Don't link a pet / Pet not listed here</option>
+              <option v-if="isLoadingPets" :value="null" disabled>Loading your pets...</option>
+              <template v-else-if="userPets.length > 0">
+                <option v-for="pet in userPets" :key="pet.id" :value="pet.id">
+                  {{ pet.name }} <span v-if="pet.species"> ({{ pet.species }})</span>
+                </option>
+              </template>
+              <option v-else :value="null" disabled>You have no registered pets.</option>
+            </select>
+            <p class="form-hint">
+              If you select one of your pets, its details will be shown on the adoption post and it will be marked as "Up for Adoption".
+            </p>
+          </div>
           
-          <form @submit.prevent="handleSubmit" class="space-y-6">
-            <!-- Title -->
-            <div class="form-group">
-              <label for="title" class="form-label">Post Title*</label>
-              <input id="title" v-model="formData.title" type="text" class="form-input" required />
+          <!-- Display Selected Pet Details -->
+          <div v-if="selectedPetDetails" class="selected-pet-details form-group">
+            <h3 class="details-header">Selected Pet: {{ selectedPetDetails.name }}</h3>
+            <div class="details-grid">
+              <div v-if="selectedPetDetails.profilePicture" class="pet-image-container">
+                  <img :src="selectedPetDetails.profilePicture" alt="Pet image" class="pet-image"/>
+              </div>
+              <div class="pet-info-grid">
+                  <div v-if="selectedPetDetails.species"><strong class="detail-label">Species:</strong> {{ selectedPetDetails.species }}</div>
+                  <div v-if="selectedPetDetails.breed"><strong class="detail-label">Breed:</strong> {{ selectedPetDetails.breed }}</div>
+                  <div v-if="selectedPetDetails.age"><strong class="detail-label">Age:</strong> {{ selectedPetDetails.age }}</div>
+                  <div v-if="selectedPetDetails.gender"><strong class="detail-label">Gender:</strong> {{ selectedPetDetails.gender }}</div>
+                  <div v-if="selectedPetDetails.size"><strong class="detail-label">Size:</strong> {{ selectedPetDetails.size }}</div>
+                  <div v-if="selectedPetDetails.color"><strong class="detail-label">Color:</strong> {{ selectedPetDetails.color }}</div>
+              </div>
             </div>
+            <div v-if="selectedPetDetails.description" class="pet-bio">
+              <strong class="detail-label">Pet's Bio:</strong>
+              <p>{{ selectedPetDetails.description }}</p>
+            </div>
+          </div>
 
-            <!-- Link Existing Pet -->
-            <div class="form-group">
-              <label for="petProfileId" class="form-label">Link an Existing Pet (Optional)</label>
-              <select id="petProfileId" v-model="formData.petProfileId" class="form-input">
-                <option :value="null">Don't link a pet / Pet not listed here</option>
-                <option v-if="isLoadingPets" :value="null" disabled>Loading your pets...</option>
-                <template v-else-if="userPets.length > 0">
-                  <option v-for="pet in userPets" :key="pet.id" :value="pet.id">
-                    {{ pet.name }} <span v-if="pet.species"> ({{ pet.species }})</span>
-                  </option>
-                </template>
-                <option v-else :value="null" disabled>You have no registered pets.</option>
-              </select>
-              <p class="form-hint">
-                If you select one of your pets, its details will be shown on the adoption post and it will be marked as "Up for Adoption".
-              </p>
-            </div>
-            
-            <!-- Display Selected Pet Details -->
-            <div v-if="selectedPetDetails" class="selected-pet-details form-group">
-              <h3 class="details-header">Selected Pet: {{ selectedPetDetails.name }}</h3>
-              <div class="details-grid">
-                <div v-if="selectedPetDetails.profilePicture" class="pet-image-container">
-                    <img :src="selectedPetDetails.profilePicture" alt="Pet image" class="pet-image"/>
-                </div>
-                <div class="pet-info-grid">
-                    <div v-if="selectedPetDetails.species"><strong class="detail-label">Species:</strong> {{ selectedPetDetails.species }}</div>
-                    <div v-if="selectedPetDetails.breed"><strong class="detail-label">Breed:</strong> {{ selectedPetDetails.breed }}</div>
-                    <div v-if="selectedPetDetails.age"><strong class="detail-label">Age:</strong> {{ selectedPetDetails.age }}</div>
-                    <div v-if="selectedPetDetails.gender"><strong class="detail-label">Gender:</strong> {{ selectedPetDetails.gender }}</div>
-                    <div v-if="selectedPetDetails.size"><strong class="detail-label">Size:</strong> {{ selectedPetDetails.size }}</div>
-                    <div v-if="selectedPetDetails.color"><strong class="detail-label">Color:</strong> {{ selectedPetDetails.color }}</div>
-                </div>
-              </div>
-              <div v-if="selectedPetDetails.description" class="pet-bio">
-                <strong class="detail-label">Pet's Bio:</strong>
-                <p>{{ selectedPetDetails.description }}</p>
-              </div>
-            </div>
-
-            <!-- Direct Pet Input Fields (if no existing pet linked) -->
-            <div v-if="showDirectPetInput" class="direct-pet-input-section form-group">
-              <h3 class="details-header">Enter Pet Details Manually</h3>
-              <div class="grid-halves">
-                <div class="form-group">
-                  <label for="petName" class="form-label">Pet's Name*</label>
-                  <input id="petName" v-model="formData.petName" type="text" class="form-input" />
-                </div>
-                <div class="form-group">
-                  <label for="petSpecies" class="form-label">Species</label>
-                  <select id="petSpecies" v-model="formData.petSpecies" class="form-input">
-                    <option :value="null">Select Species</option>
-                    <option v-for="species in PetSpeciesEnum" :key="species" :value="species">{{ species }}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="grid-halves">
-                <div class="form-group">
-                  <label for="petBreed" class="form-label">Breed</label>
-                  <input id="petBreed" v-model="formData.petBreed" type="text" class="form-input" />
-                </div>
-                <div class="form-group">
-                  <label for="petAge" class="form-label">Age (e.g., 2 years, 6 months)</label>
-                  <input id="petAge" v-model="formData.petAge" type="text" class="form-input" />
-                </div>
-              </div>
-              <div class="grid-halves">
-                 <div class="form-group">
-                  <label for="petGender" class="form-label">Gender</label>
-                  <select id="petGender" v-model="formData.petGender" class="form-input">
-                    <option :value="null">Select Gender</option>
-                    <option v-for="gender in PetGenderEnum" :key="gender" :value="gender">{{ gender }}</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="petSize" class="form-label">Size</label>
-                  <select id="petSize" v-model="formData.petSize" class="form-input">
-                    <option :value="null">Select Size</option>
-                    <option v-for="size in PetSizeEnum" :key="size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
+          <!-- Direct Pet Input Fields (if no existing pet linked) -->
+          <div v-if="showDirectPetInput" class="direct-pet-input-section form-group">
+            <h3 class="details-header">Enter Pet Details Manually</h3>
+            <div class="grid-halves">
+              <div class="form-group">
+                <label for="petName" class="form-label">Pet's Name*</label>
+                <input id="petName" v-model="formData.petName" type="text" class="form-input" />
               </div>
               <div class="form-group">
-                <label for="petColor" class="form-label">Color</label>
-                <input id="petColor" v-model="formData.petColor" type="text" class="form-input" />
+                <label for="petSpecies" class="form-label">Species</label>
+                <select id="petSpecies" v-model="formData.petSpecies" class="form-input">
+                  <option :value="null">Select Species</option>
+                  <option v-for="species in PetSpeciesEnum" :key="species" :value="species">{{ species }}</option>
+                </select>
               </div>
             </div>
-
-            <!-- Adoption Post Description -->
-            <div class="form-group">
-              <label for="description" class="form-label">Adoption Post Description*</label>
-              <textarea id="description" v-model="formData.description" rows="4" class="form-input" placeholder="Tell us about why this pet needs a new home, its personality, and what kind of family would be a good fit..." required></textarea>
-            </div>
-
-            <!-- Location -->
-            <div class="form-group">
-              <label for="location" class="form-label">Current Location (e.g., City, State)</label>
-              <input id="location" v-model="formData.location" type="text" class="form-input" />
-            </div>
-
-            <!-- Image Upload for Adoption Post -->
-            <div class="form-group">
-              <label class="form-label">Adoption Post Images (Up to 5)</label>
-              <input type="file" @change="handleFileChange" multiple accept="image/*" class="file-input" />
-              <div v-if="imagePreviews.length > 0" class="image-previews">
-                <div v-for="(preview, index) in imagePreviews" :key="index" class="preview-item">
-                  <img :src="preview" alt="Image preview" />
-                  <button type="button" @click="removeImage(index)" class="remove-img-btn">✕</button>
-                </div>
+            <div class="grid-halves">
+              <div class="form-group">
+                <label for="petBreed" class="form-label">Breed</label>
+                <input id="petBreed" v-model="formData.petBreed" type="text" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label for="petAge" class="form-label">Age (e.g., 2 years, 6 months)</label>
+                <input id="petAge" v-model="formData.petAge" type="text" class="form-input" />
               </div>
             </div>
-
-            <!-- Error/Success Messages -->
-            <div v-if="formError" class="error-message">
-              {{ formError }}
+            <div class="grid-halves">
+               <div class="form-group">
+                <label for="petGender" class="form-label">Gender</label>
+                <select id="petGender" v-model="formData.petGender" class="form-input">
+                  <option :value="null">Select Gender</option>
+                  <option v-for="gender in PetGenderEnum" :key="gender" :value="gender">{{ gender }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="petSize" class="form-label">Size</label>
+                <select id="petSize" v-model="formData.petSize" class="form-input">
+                  <option :value="null">Select Size</option>
+                  <option v-for="size in PetSizeEnum" :key="size" :value="size">{{ size }}</option>
+                </select>
+              </div>
             </div>
-            <div v-if="formSuccess" class="success-message">
-              {{ formSuccess }}
+            <div class="form-group">
+              <label for="petColor" class="form-label">Color</label>
+              <input id="petColor" v-model="formData.petColor" type="text" class="form-input" />
             </div>
+          </div>
 
-            <div class="form-actions">
-              <button type="button" @click="router.go(-1)" class="cancel-btn" :disabled="isLoading">
-                Cancel
-              </button>
-              <button type="submit" class="submit-btn" :disabled="isLoading">
-                {{ isLoading ? 'Creating Post...' : 'Create Post' }}
-              </button>
+          <!-- Adoption Post Description -->
+          <div class="form-group">
+            <label for="description" class="form-label">Adoption Post Description*</label>
+            <textarea id="description" v-model="formData.description" rows="4" class="form-input" placeholder="Tell us about why this pet needs a new home, its personality, and what kind of family would be a good fit..." required></textarea>
+          </div>
+
+          <!-- Location -->
+          <div class="form-group">
+            <label for="location" class="form-label">Current Location (e.g., City, State)</label>
+            <input id="location" v-model="formData.location" type="text" class="form-input" />
+          </div>
+
+          <!-- Image Upload for Adoption Post -->
+          <div class="form-group">
+            <label class="form-label">Adoption Post Images (Up to 5)</label>
+            <input type="file" @change="handleFileChange" multiple accept="image/*" class="file-input" />
+            <div v-if="imagePreviews.length > 0" class="image-previews">
+              <div v-for="(preview, index) in imagePreviews" :key="index" class="preview-item">
+                <img :src="preview" alt="Image preview" />
+                <button type="button" @click="removeImage(index)" class="remove-img-btn">✕</button>
+              </div>
             </div>
-          </form>
+          </div>
 
-        </div>
+          <!-- Error/Success Messages -->
+          <div v-if="formError" class="error-message">
+            {{ formError }}
+          </div>
+          <div v-if="formSuccess" class="success-message">
+            {{ formSuccess }}
+          </div>
+
+          <div class="form-actions">
+            <button type="button" @click="router.go(-1)" class="cancel-btn" :disabled="isLoading">
+              Cancel
+            </button>
+            <button type="submit" class="submit-btn" :disabled="isLoading">
+              {{ isLoading ? 'Creating Post...' : 'Create Post' }}
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
-  </MainLayout>
+  </div>
 </template>
 
 <style scoped>
 .create-adoption-post-bg {
-  min-height: calc(100vh - 60px); /* Adjust based on nav height */
   background: linear-gradient(135deg, #f5f7fa 0%, #e0eafc 100%);
   padding: 2rem 0;
 }

@@ -116,6 +116,7 @@ router.post('/verify/purrparent', authenticate, upload.array('documents', 5), us
 // Pet adoption post routes
 router.post('/adoption-posts', authenticate, upload.array('rehomingImage', 5), userHttpController.handleCreatePetAdoptionPost);
 router.get('/adoption-posts', authenticate, userHttpController.handleGetUserAdoptionPosts);
+router.get('/adoption-feed', authenticate, userHttpController.handleGetAllAdoptionPosts);
 router.delete('/adoption-posts/:postId', authenticate, userHttpController.handleDeletePetAdoptionPost);
 
 // Pet adoption application routes
