@@ -255,7 +255,9 @@ export const useFeedStore = defineStore('feed', {
     
     async addComment(postId: string, content: string) {
       try {
+        console.log('Making comment request:', { postId, content })
         const response = await axios.post('/api/comments', { postId, content })
+        console.log('Comment response:', response.data)
         
         if (response.data.success) {
           // Find the post and add the new comment
@@ -264,6 +266,7 @@ export const useFeedStore = defineStore('feed', {
             if (!this.posts[postIndex].comments) {
               this.posts[postIndex].comments = []
             }
+            // Add the new comment with all required data
             this.posts[postIndex].comments.unshift(response.data.data)
             
             // Update comment count
@@ -272,12 +275,13 @@ export const useFeedStore = defineStore('feed', {
             }
             this.posts[postIndex]._count.comments++
           }
-          return { success: true }
+          return { success: true, data: response.data.data }
         }
-        return { success: false }
-      } catch (error) {
+        return { success: false, message: response.data.message || 'Failed to add comment' }
+      } catch (error: any) {
         console.error('Error adding comment:', error)
-        return { success: false }
+        console.error('Error response:', error.response?.data)
+        return { success: false, message: error.response?.data?.message || 'Failed to add comment' }
       }
     },
     

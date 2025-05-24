@@ -80,6 +80,12 @@ const router = createRouter({
       name: 'profile',
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/user/:userId',
+      name: 'user-profile',
+      component: () => import('../views/UserProfileView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

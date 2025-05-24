@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { gsap } from 'gsap'
 import { useFeedStore } from '../../stores/feed'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const props = defineProps({
   post: {
     type: Object,
@@ -32,6 +34,11 @@ onMounted(() => {
     { opacity: 0, y: 20 },
     { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
   )
+
+  // Ensure comments are properly initialized
+  if (!props.post.comments) {
+    props.post.comments = []
+  }
 })
 
 const formatDate = (dateString: string) => {
@@ -86,9 +93,11 @@ const submitComment = async () => {
   if (!comment.value.trim()) return
   
   isSubmittingComment.value = true
+  console.log('Attempting to submit comment:', { postId: props.post.id, content: comment.value })
   
   try {
     const result = await feedStore.addComment(props.post.id, comment.value)
+    console.log('Comment submission result:', result)
     
     if (result.success) {
       comment.value = ''
@@ -96,7 +105,7 @@ const submitComment = async () => {
       
       // Animate new comment
       setTimeout(() => {
-        const newComment = document.querySelector('.comment:last-child')
+        const newComment = document.querySelector('.comment-item:first-child')
         if (newComment) {
           gsap.fromTo(
             newComment,
@@ -105,9 +114,13 @@ const submitComment = async () => {
           )
         }
       }, 0)
+    } else {
+      console.error('Failed to add comment:', result.message)
+      alert('Failed to add comment: ' + result.message)
     }
   } catch (error) {
     console.error('Error adding comment:', error)
+    alert('Error adding comment. Please try again.')
   } finally {
     isSubmittingComment.value = false
   }
@@ -140,24 +153,39 @@ const toggleFavorite = async () => {
     isTogglingFavorite.value = false
   }
 }
+
+const navigateToProfile = (userId: string) => {
+  router.push(`/user/${userId}`)
+}
 </script>
 
 <template>
   <div class="post-card">
     <!-- Post header -->
     <div class="post-header">
-      <div v-if="post.author.profile?.profilePictureUrl" class="avatar-img">
+      <div 
+        v-if="post.author.profile?.profilePictureUrl" 
+        class="avatar-img cursor-pointer"
+        @click="navigateToProfile(post.author.id)"
+      >
         <img 
           :src="post.author.profile.profilePictureUrl" 
           alt="Profile picture" 
         />
       </div>
-      <div v-else class="avatar-gradient">
+      <div 
+        v-else 
+        class="avatar-gradient cursor-pointer"
+        @click="navigateToProfile(post.author.id)"
+      >
         {{ post.author.firstName.charAt(0) }}{{ post.author.lastName.charAt(0) }}
       </div>
       <div class="header-info">
         <div class="header-row">
-          <h3 class="author-name">
+          <h3 
+            class="author-name cursor-pointer hover:text-indigo-600 transition-colors"
+            @click="navigateToProfile(post.author.id)"
+          >
             {{ post.author.firstName }} {{ post.author.lastName }}
           </h3>
           <span v-if="post.isVerified" class="verified-badge">
@@ -167,7 +195,12 @@ const toggleFavorite = async () => {
           </span>
         </div>
         <div class="header-row">
-          <span class="author-username">@{{ post.author.username }}</span>
+          <span 
+            class="author-username cursor-pointer hover:text-indigo-600 transition-colors"
+            @click="navigateToProfile(post.author.id)"
+          >
+            @{{ post.author.username }}
+          </span>
           <span class="post-date">{{ formatDate(post.createdAt) }}</span>
         </div>
       </div>
@@ -654,5 +687,19 @@ const toggleFavorite = async () => {
     padding: 0 0.8rem;
     font-size: 0.85rem;
   }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover\:text-indigo-600:hover {
+  color: #4f46e5;
+}
+
+.transition-colors {
+  transition-property: color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 </style> 

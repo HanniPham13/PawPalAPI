@@ -45,6 +45,46 @@ router.get('/profile', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
+// Get any user's profile by ID
+router.get('/profile/:userId', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Get the user with their profile
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        coverPicture: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            petProfiles: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // Extract password and other sensitive fields
+    const { password, email, ...userData } = user;
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'User profile retrieved successfully',
+      data: userData
+    });
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve user profile' });
+  }
+});
+
 // Profile picture routes
 router.post('/profile-picture', authenticate, upload.single('profilePicture'), userHttpController.handleUploadProfilePicture);
 router.delete('/profile-picture', authenticate, userHttpController.handleDeleteProfilePicture);
