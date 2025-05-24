@@ -78,13 +78,13 @@ const handleLogin = async (): Promise<void> => {
 }
 .brand-logo {
   font-size: 2.2rem;
-  color: #5e72ff;
+  color: #ff5e9c;
   margin-right: 0.5rem;
 }
 .brand-title {
   font-size: 2rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #5e72ff 0%, #7f53ff 100%);
+  background: linear-gradient(90deg, #ff5e9c 0%, #ff7eb3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -128,8 +128,8 @@ const handleLogin = async (): Promise<void> => {
   margin-bottom: 0.5rem;
 }
 .form-input:focus {
-  border: 1.5px solid #5e72ff;
-  box-shadow: 0 0 0 2px #e0e7ff;
+  border: 1.5px solid #ff5e9c;
+  box-shadow: 0 0 0 2px #ffe0ef;
   outline: none;
   background: #fff;
 }
@@ -137,26 +137,26 @@ const handleLogin = async (): Promise<void> => {
   width: 100%;
   padding: 0.75rem 0;
   border-radius: 0.5rem;
-  background: linear-gradient(90deg, #5e72ff 0%, #7f53ff 100%);
+  background: linear-gradient(90deg, #ff5e9c 0%, #ff7eb3 100%);
   color: white;
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.04em;
   border: none;
-  box-shadow: 0 4px 16px 0 rgba(94, 114, 255, 0.12);
+  box-shadow: 0 4px 16px 0 rgba(255, 94, 156, 0.12);
   cursor: pointer;
   margin-top: 0.5rem;
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
 }
 .form-btn:hover, .form-btn:focus {
-  background: linear-gradient(90deg, #7f53ff 0%, #5e72ff 100%);
-  box-shadow: 0 6px 24px 0 rgba(94, 114, 255, 0.18);
+  background: linear-gradient(90deg, #ff7eb3 0%, #ff5e9c 100%);
+  box-shadow: 0 6px 24px 0 rgba(255, 94, 156, 0.18);
   transform: translateY(-2px) scale(1.02);
 }
 .error-message {
-  background: #e0e7ff;
-  color: #3d2c8d;
-  border-left: 4px solid #5e72ff;
+  background: #ffe0ef;
+  color: #d72660;
+  border-left: 4px solid #ff5e9c;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
@@ -171,24 +171,24 @@ const handleLogin = async (): Promise<void> => {
   margin-top: 0.5rem;
 }
 .login-link a {
-  color: #5e72ff;
+  color: #ff5e9c;
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s;
 }
 .login-link a:hover {
-  color: #3d2c8d;
+  color: #d72660;
   text-decoration: underline;
 }
 .forgot-link {
-  color: #5e72ff;
+  color: #ff5e9c;
   font-size: 0.98rem;
   font-weight: 500;
   text-decoration: none;
   transition: color 0.2s;
 }
 .forgot-link:hover {
-  color: #3d2c8d;
+  color: #d72660;
   text-decoration: underline;
 }
 </style> 

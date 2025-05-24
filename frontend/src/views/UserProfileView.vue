@@ -105,7 +105,7 @@ onMounted(() => {
 <style scoped>
 .profile-bg {
   min-height: 100vh;
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #fff 0%, #ffe0ef 100%);
 }
 .profile-container {
   max-width: 600px;
@@ -122,8 +122,8 @@ onMounted(() => {
 .loader {
   width: 3rem;
   height: 3rem;
-  border: 4px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border: 4px solid #ffe0ef;
+  border-top-color: #ff5e9c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -133,25 +133,27 @@ onMounted(() => {
 .profile-error {
   text-align: center;
   padding: 4rem 0;
+  color: #ff5e9c;
 }
 .retry-btn {
   margin-top: 1rem;
   padding: 0.5rem 1.5rem;
-  background: #6366f1;
-  color: #fff;
+  background: #ffe0ef;
+  color: #ff5e9c;
   border-radius: 0.5rem;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 .retry-btn:hover {
-  background: #4338ca;
+  background: #ff7eb3;
+  color: #fff;
 }
 .profile-card {
   background: #fff;
   border-radius: 1.5rem;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+  box-shadow: 0 4px 24px 0 rgba(255, 94, 156, 0.08);
   overflow: visible;
   position: relative;
 }
@@ -169,7 +171,7 @@ onMounted(() => {
   background-position: center;
 }
 .cover-gradient {
-  background: linear-gradient(90deg, #6366f1 0%, #a5b4fc 100%);
+  background: linear-gradient(90deg, #ff5e9c 0%, #ff7eb3 100%);
 }
 .profile-pic-wrapper {
   position: absolute;
@@ -184,19 +186,20 @@ onMounted(() => {
   border-radius: 50%;
   overflow: hidden;
   border: 5px solid #fff;
-  box-shadow: 0 4px 16px 0 rgba(99,102,241,0.15);
+  box-shadow: 0 4px 16px 0 rgba(255, 94, 156, 0.15);
   background: #fff;
 }
 .profile-pic-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border: 2.5px solid #ff7eb3;
 }
 .profile-pic-gradient {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%);
+  background: linear-gradient(135deg, #7f5fff 0%, #ff7eb3 100%);
   color: #fff;
   display: flex;
   align-items: center;
@@ -204,7 +207,7 @@ onMounted(() => {
   font-size: 2.5rem;
   font-weight: 700;
   border: 5px solid #fff;
-  box-shadow: 0 4px 16px 0 rgba(99,102,241,0.15);
+  box-shadow: 0 4px 16px 0 rgba(255, 94, 156, 0.15);
 }
 .profile-main-info {
   margin-top: 70px;
@@ -221,25 +224,29 @@ onMounted(() => {
 .profile-name {
   font-size: 2rem;
   font-weight: 700;
-  color: #22223b;
+  background: linear-gradient(90deg, #ff5e9c 0%, #ff7eb3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 .verified-badge {
-  color: #6366f1;
+  color: #ff5e9c;
   vertical-align: middle;
   display: inline-flex;
   align-items: center;
 }
 .profile-username {
-  color: #6366f1;
+  color: #b36b8a;
   font-size: 1.1rem;
   margin-top: 0.2rem;
   font-weight: 500;
 }
 .follow-btn {
-  background: #6366f1;
+  background: linear-gradient(90deg, #ff5e9c 0%, #ff7eb3 100%);
   color: #fff;
   border: none;
   border-radius: 999px;
@@ -247,11 +254,11 @@ onMounted(() => {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(255, 94, 156, 0.10);
 }
 .follow-btn:hover {
-  background: #4338ca;
+  background: linear-gradient(90deg, #ff7eb3 0%, #ff5e9c 100%);
 }
 .profile-bio {
   margin: 1.2rem 0 0.5rem 0;
@@ -275,7 +282,7 @@ onMounted(() => {
 }
 .stat-label {
   font-size: 0.95rem;
-  color: #6366f1;
+  color: #ff5e9c;
   font-weight: 500;
 }
 @media (max-width: 600px) {
