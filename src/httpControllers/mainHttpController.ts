@@ -1,5 +1,27 @@
 import { Request, Response } from 'express';
-import { registerUser, verifyEmail, resendVerificationEmail, initiatePasswordReset, resetPassword, loginUser, getFeedPosts, addReaction, addComment, deleteComment, toggleFavorite, toggleSavePost, getSavedPosts, followUser, unfollowUser, removeFollower, getFollowers, getFollowing, sendMessage, getChatHistory, getUserChats } from '../functionControllers/mainFunctionController';
+import { 
+  registerUser, 
+  verifyEmail, 
+  resendVerificationEmail, 
+  initiatePasswordReset, 
+  resetPassword, 
+  loginUser,
+  getFeedPosts,
+  addReaction,
+  addComment,
+  deleteComment,
+  toggleFavorite,
+  toggleSavePost,
+  getSavedPosts,
+  followUser,
+  unfollowUser,
+  removeFollower,
+  getFollowers,
+  getFollowing,
+  sendMessage,
+  getChatHistory,
+  getUserChats
+} from '../functionControllers/mainFunctionController';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const handleRegister = async (req: Request, res: Response): Promise<void> => {

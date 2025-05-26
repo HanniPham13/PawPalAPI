@@ -22,7 +22,7 @@ import {
   handleGetChatHistory,
   handleGetUserChats
 } from '../httpControllers/mainHttpController';
-import { authenticate, verifiedOnly } from '../middlewares/authMiddleware';
+import { authenticate } from '../middlewares/authMiddleware';
 import { upload } from '../middlewares/fileHandler';
 
 const router = Router();

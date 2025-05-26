@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { prisma } from './index';
 import userRoutes from './routes/userRoutes';
 import mainRoutes from './routes/mainRoutes';
 import petProfileRoutes from './routes/petProfileRoutes';
@@ -20,15 +20,13 @@ app.use('/api/user', userRoutes);
 app.use('/api/main', mainRoutes);
 app.use('/api/pet', petProfileRoutes);
 
-// MongoDB Atlas connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your_username:your_password@cluster0.mongodb.net/pawpal?retryWrites=true&w=majority';
-
-mongoose.connect(MONGODB_URI)
+// Test database connection
+prisma.$connect()
   .then(() => {
-    console.log('Connected to MongoDB Atlas');
+    console.log('Connected to MySQL database');
   })
-  .catch((error: mongoose.Error) => {
-    console.error('MongoDB connection error:', error);
+  .catch((error: Error) => {
+    console.error('Database connection error:', error);
   });
 
 // Error handling middleware

@@ -1,11 +1,10 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate } from '../middlewares/authMiddleware';
 import {
-  createPetProfileHandler,
-  updatePetProfileHandler,
-  getUserPetsHandler,
-  getPetProfileHandler,
-  deletePetProfileHandler
+  handleCreatePetProfile,
+  handleUpdatePetProfile,
+  handleGetUserPetProfiles,
+  handleDeletePetProfile
 } from '../httpControllers/petProfileHttpController';
 
 const router = express.Router();
@@ -13,36 +12,29 @@ const router = express.Router();
 // Create a new pet profile
 router.post(
   '/profile',
-  authenticateToken,
-  createPetProfileHandler
+  authenticate,
+  handleCreatePetProfile
 );
 
 // Update a pet profile
 router.put(
-  '/profile/:id',
-  authenticateToken,
-  updatePetProfileHandler
+  '/profile/:petId',
+  authenticate,
+  handleUpdatePetProfile
 );
 
 // Get all pets for the authenticated user
 router.get(
   '/profiles',
-  authenticateToken,
-  getUserPetsHandler
-);
-
-// Get a specific pet profile
-router.get(
-  '/profile/:id',
-  authenticateToken,
-  getPetProfileHandler
+  authenticate,
+  handleGetUserPetProfiles
 );
 
 // Delete a pet profile
 router.delete(
-  '/profile/:id',
-  authenticateToken,
-  deletePetProfileHandler
+  '/profile/:petId',
+  authenticate,
+  handleDeletePetProfile
 );
 
 export default router; 

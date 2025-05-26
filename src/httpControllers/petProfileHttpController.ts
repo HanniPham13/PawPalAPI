@@ -1,126 +1,96 @@
 import { Request, Response } from 'express';
-import {
-  createPetProfile,
-  updatePetProfile,
-  getUserPets,
-  getPetProfile,
-  deletePetProfile
-} from '../functionControllers/petProfileFunctionController';
+import { AuthRequest } from '../middlewares/authMiddleware';
+import * as petProfileFunctionController from '../functionControllers/petProfileFunctionController';
 
-export const createPetProfileHandler = async (req: Request, res: Response) => {
+export const handleCreatePetProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized'
-      });
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
     }
 
-    const petProfile = await createPetProfile(req, userId);
+    const petProfile = await petProfileFunctionController.createPetProfile(userId, req.body);
     res.status(201).json({
       success: true,
+      message: 'Pet profile created successfully',
       data: petProfile
     });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to create pet profile'
-    });
+  } catch (error) {
+    console.error('Create pet profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create pet profile' });
   }
 };
 
-export const updatePetProfileHandler = async (req: Request, res: Response) => {
+export const handleUpdatePetProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized'
-      });
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
     }
 
-    const petId = req.params.id;
-    const petProfile = await updatePetProfile(req, userId, petId);
-    res.json({
+    const { petId } = req.params;
+    const updatedProfile = await petProfileFunctionController.updatePetProfile(userId, petId, req.body);
+
+    if (!updatedProfile) {
+      res.status(404).json({ success: false, message: 'Pet profile not found' });
+      return;
+    }
+
+    res.status(200).json({
       success: true,
-      data: petProfile
+      message: 'Pet profile updated successfully',
+      data: updatedProfile
     });
-  } catch (error: any) {
-    res.status(error.message === 'Pet profile not found' ? 404 : 500).json({
-      success: false,
-      message: error.message || 'Failed to update pet profile'
-    });
+  } catch (error) {
+    console.error('Update pet profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update pet profile' });
   }
 };
 
-export const getUserPetsHandler = async (req: Request, res: Response) => {
+export const handleGetUserPetProfiles = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized'
-      });
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
     }
 
-    const pets = await getUserPets(userId);
-    res.json({
+    const petProfiles = await petProfileFunctionController.getUserPetProfiles(userId);
+    res.status(200).json({
       success: true,
-      data: pets
+      message: 'Pet profiles retrieved successfully',
+      data: petProfiles
     });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fetch user pets'
-    });
+  } catch (error) {
+    console.error('Get user pet profiles error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get pet profiles' });
   }
 };
 
-export const getPetProfileHandler = async (req: Request, res: Response) => {
+export const handleDeletePetProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized'
-      });
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
     }
 
-    const petId = req.params.id;
-    const petProfile = await getPetProfile(petId, userId);
-    res.json({
-      success: true,
-      data: petProfile
-    });
-  } catch (error: any) {
-    res.status(error.message === 'Pet profile not found' ? 404 : 500).json({
-      success: false,
-      message: error.message || 'Failed to fetch pet profile'
-    });
-  }
-};
+    const { petId } = req.params;
+    const deleted = await petProfileFunctionController.deletePetProfile(userId, petId);
 
-export const deletePetProfileHandler = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized'
-      });
+    if (!deleted) {
+      res.status(404).json({ success: false, message: 'Pet profile not found' });
+      return;
     }
 
-    const petId = req.params.id;
-    await deletePetProfile(petId, userId);
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Pet profile deleted successfully'
     });
-  } catch (error: any) {
-    res.status(error.message === 'Pet profile not found' ? 404 : 500).json({
-      success: false,
-      message: error.message || 'Failed to delete pet profile'
-    });
+  } catch (error) {
+    console.error('Delete pet profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete pet profile' });
   }
 }; 

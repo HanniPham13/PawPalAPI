@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../index';
+import { UserRole } from '@prisma/client';
 
 export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: string;
+    role: UserRole;
   };
   file?: Express.Multer.File;
 }
@@ -23,7 +24,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as {
       id: string;
       email: string;
-      role: string;
+      role: UserRole;
     };
 
     const user = await prisma.user.findUnique({
@@ -69,7 +70,7 @@ export const verifiedOnly = (req: AuthRequest, res: Response, next: NextFunction
 
 // Admin only middleware
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (req.user?.role !== 'ADMIN') {
+  if (req.user?.role !== UserRole.ADMIN) {
     res.status(403).json({ success: false, message: 'Unauthorized. Admin access only.' });
     return;
   }
@@ -79,7 +80,7 @@ export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction): 
 
 // Vet only middleware
 export const vetOnly = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (req.user?.role !== 'VET') {
+  if (req.user?.role !== UserRole.VET) {
     res.status(403).json({ success: false, message: 'Unauthorized. Vet access only.' });
     return;
   }

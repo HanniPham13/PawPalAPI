@@ -1,45 +1,9 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { User, UserRole } from '@prisma/client';
 
-export interface IUser extends Document {
-  _id: string;
+export interface IUser {
+  id: string;
   email: string;
-  password: string;
-  username: string;
-  isVerified: boolean;
-  verificationToken?: string;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  role: UserRole;
 }
 
-const UserSchema: Schema = new Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  verificationToken: String,
-  resetPasswordToken: String,
-  resetPasswordExpires: Date
-}, {
-  timestamps: true
-});
-
-export default mongoose.model<IUser>('User', UserSchema); 
+export default User; 
