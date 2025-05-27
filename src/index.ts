@@ -37,7 +37,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send('API is running!');
 });
 
-const PORT: number = 6600;
+const PORT: number = Number(process.env.PORT) || 6601;
 const HOST: string = '0.0.0.0';
 
 

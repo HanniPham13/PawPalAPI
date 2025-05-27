@@ -15,4 +15,6 @@ router.put('/profile/:petId', authMiddleware_1.authenticate, petProfileHttpContr
 router.get('/profiles', authMiddleware_1.authenticate, petProfileHttpController_1.handleGetUserPetProfiles);
 // Delete a pet profile
 router.delete('/profile/:petId', authMiddleware_1.authenticate, petProfileHttpController_1.handleDeletePetProfile);
+// Update pet adoptable status
+router.patch('/profile/:petId/adoptable', authMiddleware_1.authenticate, petProfileHttpController_1.handleUpdatePetAdoptableStatus);
 exports.default = router;

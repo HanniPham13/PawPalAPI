@@ -36,10 +36,19 @@ axios.interceptors.response.use(
   }
 )
 
-onMounted(() => {
+onMounted(async () => {
   // Check if user is authenticated
   if (authStore.isAuthenticated) {
+    // Set authorization header
     axios.defaults.headers.common['Authorization'] = `Bearer ${authStore.token}`
+    
+    // Fetch latest user profile data on app mount
+    try {
+      await authStore.fetchUserProfile()
+      console.log('User profile loaded on app mount')
+    } catch (err) {
+      console.error('Failed to load user profile on app mount:', err)
+    }
   }
 })
 </script>

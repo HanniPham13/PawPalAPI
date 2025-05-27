@@ -42,7 +42,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleDeletePetProfile = exports.handleGetUserPetProfiles = exports.handleUpdatePetProfile = exports.handleCreatePetProfile = void 0;
+exports.handleUpdatePetAdoptableStatus = exports.handleDeletePetProfile = exports.handleGetUserPetProfiles = exports.handleUpdatePetProfile = exports.handleCreatePetProfile = void 0;
 const petProfileFunctionController = __importStar(require("../functionControllers/petProfileFunctionController"));
 const handleCreatePetProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -137,3 +137,34 @@ const handleDeletePetProfile = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.handleDeletePetProfile = handleDeletePetProfile;
+const handleUpdatePetAdoptableStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+        const { petId } = req.params;
+        const { isAdoptable } = req.body;
+        if (isAdoptable === undefined) {
+            res.status(400).json({ success: false, message: 'isAdoptable field is required' });
+            return;
+        }
+        const updatedProfile = yield petProfileFunctionController.updatePetProfile(userId, petId, { isAdoptable });
+        if (!updatedProfile) {
+            res.status(404).json({ success: false, message: 'Pet profile not found' });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Pet adoptable status updated successfully',
+            data: updatedProfile
+        });
+    }
+    catch (error) {
+        console.error('Update pet adoptable status error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update pet adoptable status' });
+    }
+});
+exports.handleUpdatePetAdoptableStatus = handleUpdatePetAdoptableStatus;

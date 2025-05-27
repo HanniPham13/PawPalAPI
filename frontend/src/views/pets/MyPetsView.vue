@@ -30,7 +30,7 @@ const fetchPets = async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    const response = await axios.get('/api/pet/profiles', {
+    const response = await axios.get('/api/pet/user-pets', {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     if (response.data.success) {
@@ -61,7 +61,7 @@ const handlePetCreated = () => {
 
 const toggleAdoptableStatus = async (petId: string, currentStatus: boolean) => {
   try {
-    const response = await axios.patch(`/api/pet/profile/${petId}/adoptable`, 
+    const response = await axios.patch(`/api/pet/profile/${petId}/toggle-adoptable`, 
       { isAdoptable: !currentStatus },
       { headers: { Authorization: `Bearer ${authStore.token}` } }
     );

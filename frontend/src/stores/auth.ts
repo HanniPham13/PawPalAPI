@@ -198,14 +198,22 @@ export const useAuthStore = defineStore('auth', {
         
         if (response.data.success) {
           // Update user data with the fresh profile data
-          const updatedUser = { ...this.user, ...response.data.data }
-          console.log('Updated user data:', updatedUser)
-          this.user = updatedUser
+          const userData = response.data.data;
           
-          // Update localStorage
-          localStorage.setItem('user', JSON.stringify(updatedUser))
+          // Make sure we have a complete user object with all expected fields
+          if (!userData) {
+            console.error('Invalid user data in response');
+            return { success: false, message: 'Invalid user data received' };
+          }
           
-          return { success: true, data: updatedUser }
+          // Store the complete user object
+          this.user = userData;
+          
+          // Ensure we persist the complete user data to localStorage
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('token', this.token as string);
+          
+          return { success: true, data: userData }
         } else {
           this.error = response.data.message
           console.error('API error fetching profile:', response.data.message)

@@ -4,7 +4,8 @@ import {
   handleCreatePetProfile,
   handleUpdatePetProfile,
   handleGetUserPetProfiles,
-  handleDeletePetProfile
+  handleDeletePetProfile,
+  handleUpdatePetAdoptableStatus
 } from '../httpControllers/petProfileHttpController';
 
 const router = express.Router();
@@ -35,6 +36,13 @@ router.delete(
   '/profile/:petId',
   authenticate,
   handleDeletePetProfile
+);
+
+// Update pet adoptable status
+router.patch(
+  '/profile/:petId/adoptable',
+  authenticate,
+  handleUpdatePetAdoptableStatus
 );
 
 export default router; 

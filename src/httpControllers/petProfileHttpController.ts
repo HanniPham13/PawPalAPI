@@ -93,4 +93,38 @@ export const handleDeletePetProfile = async (req: AuthRequest, res: Response): P
     console.error('Delete pet profile error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete pet profile' });
   }
+};
+
+export const handleUpdatePetAdoptableStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    const { petId } = req.params;
+    const { isAdoptable } = req.body;
+
+    if (isAdoptable === undefined) {
+      res.status(400).json({ success: false, message: 'isAdoptable field is required' });
+      return;
+    }
+
+    const updatedProfile = await petProfileFunctionController.updatePetProfile(userId, petId, { isAdoptable });
+
+    if (!updatedProfile) {
+      res.status(404).json({ success: false, message: 'Pet profile not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Pet adoptable status updated successfully',
+      data: updatedProfile
+    });
+  } catch (error) {
+    console.error('Update pet adoptable status error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update pet adoptable status' });
+  }
 }; 

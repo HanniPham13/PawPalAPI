@@ -36,7 +36,7 @@ app.use('/api/vet', vetRoutes_1.default);
 app.get('/', (req, res) => {
     res.send('API is running!');
 });
-const PORT = 6600;
+const PORT = Number(process.env.PORT) || 6601;
 const HOST = '0.0.0.0';
 // Start the server
 server.listen(PORT, () => {
