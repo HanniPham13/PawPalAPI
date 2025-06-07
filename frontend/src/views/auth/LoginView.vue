@@ -1,41 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import AuthLayout2 from '../../components/layouts/AuthLayout2.vue'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../../stores/auth";
+import AuthLayout2 from "../../components/layouts/AuthLayout2.vue";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const isLoading = ref(false)
+const email = ref("");
+const password = ref("");
+const errorMessage = ref("");
+const isLoading = ref(false);
 
 const handleLogin = async (): Promise<void> => {
   if (!email.value || !password.value) {
-    errorMessage.value = 'Please fill in all fields'
-    return
+    errorMessage.value = "Please fill in all fields";
+    return;
   }
-  
-  isLoading.value = true
-  errorMessage.value = ''
-  
+
+  isLoading.value = true;
+  errorMessage.value = "";
+
   try {
-    const result = await authStore.login(email.value, password.value)
-    
+    const result = await authStore.login(email.value, password.value);
+
     if (result.success) {
-      router.push('/feed')
+      // Check role from auth store
+      if (authStore.user?.role === "ADMIN") {
+        router.push("/admin");
+      } else if (authStore.user?.role === "VET") {
+        router.push("/vet");
+      } else {
+        router.push("/feed");
+      }
     } else {
-      errorMessage.value = 'Failed to sign in. Please try again.'
+      errorMessage.value =
+        result.message || "Failed to sign in. Please try again.";
     }
   } catch (error) {
-    errorMessage.value = 'An error occurred during login'
-    console.error(error)
+    errorMessage.value = "An error occurred during login";
+    console.error(error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>
 
 <template>
@@ -50,20 +58,36 @@ const handleLogin = async (): Promise<void> => {
       <form @submit.prevent="handleLogin" class="space-y-6">
         <div>
           <label for="email" class="form-label">Email</label>
-          <input id="email" v-model="email" type="email" class="form-input" required />
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            class="form-input"
+            required
+          />
         </div>
         <div>
           <div class="flex justify-between items-center mb-1">
             <label for="password" class="form-label">Password</label>
-            <router-link to="/forgot-password" class="forgot-link">Forgot password?</router-link>
+            <router-link to="/forgot-password" class="forgot-link"
+              >Forgot password?</router-link
+            >
           </div>
-          <input id="password" v-model="password" type="password" class="form-input" required />
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            class="form-input"
+            required
+          />
         </div>
         <button type="submit" class="form-btn" :disabled="isLoading">
-          {{ isLoading ? 'Signing in...' : 'Sign In' }}
+          {{ isLoading ? "Signing in..." : "Sign In" }}
         </button>
       </form>
-      <p class="login-link">Don't have an account? <router-link to="/register">Sign up</router-link></p>
+      <p class="login-link">
+        Don't have an account? <router-link to="/register">Sign up</router-link>
+      </p>
     </div>
   </AuthLayout2>
 </template>
@@ -148,7 +172,8 @@ const handleLogin = async (): Promise<void> => {
   margin-top: 0.5rem;
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
 }
-.form-btn:hover, .form-btn:focus {
+.form-btn:hover,
+.form-btn:focus {
   background: linear-gradient(90deg, #ff7eb3 0%, #ff5e9c 100%);
   box-shadow: 0 6px 24px 0 rgba(255, 94, 156, 0.18);
   transform: translateY(-2px) scale(1.02);
@@ -191,4 +216,4 @@ const handleLogin = async (): Promise<void> => {
   color: #d72660;
   text-decoration: underline;
 }
-</style> 
+</style>

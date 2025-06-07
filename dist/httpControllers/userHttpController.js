@@ -87,7 +87,7 @@ exports.handleUploadProfilePicture = handleUploadProfilePicture;
 const handleUploadCoverPicture = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        if (!req.file) {
+        if (!req.file) { 
             res.status(400).json({ success: false, message: 'No file uploaded' });
             return;
         }

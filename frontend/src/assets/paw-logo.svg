@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main paw pad -->
+  <path d="M256 352C309.019 352 352 309.019 352 256C352 202.981 309.019 160 256 160C202.981 160 160 202.981 160 256C160 309.019 202.981 352 256 352Z" fill="#4F46E5"/>
+  
+  <!-- Top toe -->
+  <circle cx="256" cy="128" r="48" fill="#4F46E5"/>
+  
+  <!-- Right toe -->
+  <circle cx="384" cy="256" r="48" fill="#4F46E5"/>
+  
+  <!-- Bottom toe -->
+  <circle cx="256" cy="384" r="48" fill="#4F46E5"/>
+  
+  <!-- Left toe -->
+  <circle cx="128" cy="256" r="48" fill="#4F46E5"/>
+</svg> 

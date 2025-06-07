@@ -1,129 +1,229 @@
-import { Router } from 'express';
-import { authenticate } from '../middlewares/authMiddleware';
-import { upload } from '../middlewares/fileHandler';
-import * as userHttpController from '../httpControllers/userHttpController';
-import { Request, Response } from 'express';
-import { AuthRequest } from '../middlewares/authMiddleware';
-import { prisma } from '../index';
+import { Router } from "express";
+import { authenticate } from "../middlewares/authMiddleware";
+import { upload } from "../middlewares/fileHandler";
+import * as userHttpController from "../httpControllers/userHttpController";
+import { Request, Response } from "express";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { prisma } from "../index";
 
 const router = Router();
 
-// Get current user profile - temporary direct implementation 
-router.get('/profile', authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(401).json({ success: false, message: 'User not authenticated' });
-      return;
-    }
-
-    // Get the user with their profile
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        profile: true,
-        coverPicture: true
+// Get current user profile - temporary direct implementation
+router.get(
+  "/profile",
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res
+          .status(401)
+          .json({ success: false, message: "User not authenticated" });
+        return;
       }
-    });
 
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
+      // Get the user with their profile
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          profile: true,
+          coverPicture: true,
+        },
+      });
+
+      if (!user) {
+        res.status(404).json({ success: false, message: "User not found" });
+        return;
+      }
+
+      // Extract password and other sensitive fields
+      const { password, ...userData } = user;
+
+      res.status(200).json({
+        success: true,
+        message: "User profile retrieved successfully",
+        data: userData,
+      });
+    } catch (error) {
+      console.error("Error getting user profile:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to retrieve user profile" });
     }
-
-    // Extract password and other sensitive fields
-    const { password, ...userData } = user;
-
-    res.status(200).json({ 
-      success: true, 
-      message: 'User profile retrieved successfully',
-      data: userData
-    });
-  } catch (error) {
-    console.error('Error getting user profile:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve user profile' });
   }
-});
+);
 
 // Get any user's profile by ID
-router.get('/profile/:userId', authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const { userId } = req.params;
+router.get(
+  "/profile/:userId",
+  authenticate,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { userId } = req.params;
 
-    // Get the user with their profile
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        profile: true,
-        coverPicture: true,
-        _count: {
-          select: {
-            followers: true,
-            following: true,
-            petProfiles: true
-          }
-        }
+      // Get the user with their profile
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          profile: true,
+          coverPicture: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              petProfiles: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        res.status(404).json({ success: false, message: "User not found" });
+        return;
       }
-    });
 
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
+      // Extract password and other sensitive fields
+      const { password, email, ...userData } = user;
+
+      // Swap follower and following counts if _count exists
+      if (userData._count) {
+        const tempFollowers = userData._count.followers;
+        userData._count.followers = userData._count.following;
+        userData._count.following = tempFollowers;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "User profile retrieved successfully",
+        data: userData,
+      });
+    } catch (error) {
+      console.error("Error getting user profile:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to retrieve user profile" });
     }
-
-    // Extract password and other sensitive fields
-    const { password, email, ...userData } = user;
-
-    // Swap follower and following counts if _count exists
-    if (userData._count) {
-      const tempFollowers = userData._count.followers;
-      userData._count.followers = userData._count.following;
-      userData._count.following = tempFollowers;
-    }
-
-    res.status(200).json({ 
-      success: true, 
-      message: 'User profile retrieved successfully',
-      data: userData
-    });
-  } catch (error) {
-    console.error('Error getting user profile:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve user profile' });
   }
-});
+);
 
 // Profile picture routes
-router.post('/profile-picture', authenticate, upload.single('profilePicture'), userHttpController.handleUploadProfilePicture);
-router.delete('/profile-picture', authenticate, userHttpController.handleDeleteProfilePicture);
+router.post(
+  "/profile-picture",
+  authenticate,
+  upload.single("profilePicture"),
+  userHttpController.handleUploadProfilePicture
+);
+router.delete(
+  "/profile-picture",
+  authenticate,
+  userHttpController.handleDeleteProfilePicture
+);
 // Cover picture routes
-router.post('/cover-picture', authenticate, upload.single('coverPicture'), userHttpController.handleUploadCoverPicture);
-router.delete('/cover-picture', authenticate, userHttpController.handleDeleteCoverPicture);
+router.post(
+  "/cover-picture",
+  authenticate,
+  upload.single("coverPicture"),
+  userHttpController.handleUploadCoverPicture
+);
+router.delete(
+  "/cover-picture",
+  authenticate,
+  userHttpController.handleDeleteCoverPicture
+);
 // Profile information routes
-router.patch('/profile', authenticate, userHttpController.handleUpdateProfileInfo);
+router.patch(
+  "/profile",
+  authenticate,
+  userHttpController.handleUpdateProfileInfo
+);
 // Password change route
-router.post('/change-password', authenticate, userHttpController.handleChangePassword);
+router.post(
+  "/change-password",
+  authenticate,
+  userHttpController.handleChangePassword
+);
 // Address routes
-router.put('/address', authenticate, userHttpController.handleUpdateAddress);
+router.put("/address", authenticate, userHttpController.handleUpdateAddress);
 
 // Social post routes
-router.post('/posts', authenticate, upload.array('postImage', 5), userHttpController.handleCreateSocialPost);
-router.delete('/posts/:postId', authenticate, userHttpController.handleDeleteSocialPost);
-router.get('/posts/:postId', authenticate, userHttpController.handleGetSocialPost);
+router.post(
+  "/posts",
+  authenticate,
+  upload.array("postImage", 5),
+  userHttpController.handleCreateSocialPost
+);
+router.delete(
+  "/posts/:postId",
+  authenticate,
+  userHttpController.handleDeleteSocialPost
+);
+router.get(
+  "/posts/:postId",
+  authenticate,
+  userHttpController.handleGetSocialPost
+);
 
 // Purrparent verification route
-router.post('/verify/purrparent', authenticate, upload.array('documents', 5), userHttpController.handleApplyForPurrparentVerification);
+router.post(
+  "/verify/purrparent",
+  authenticate,
+  upload.array("documents", 5),
+  userHttpController.handleApplyForPurrparentVerification
+);
 
 // Pet adoption post routes
-router.post('/adoption-posts', authenticate, upload.array('rehomingImage', 5), userHttpController.handleCreatePetAdoptionPost);
-router.get('/adoption-posts', authenticate, userHttpController.handleGetUserAdoptionPosts);
-router.get('/adoption-feed', authenticate, userHttpController.handleGetAllAdoptionPosts);
-router.delete('/adoption-posts/:postId', authenticate, userHttpController.handleDeletePetAdoptionPost);
+router.post(
+  "/adoption-posts",
+  authenticate,
+  upload.array("rehomingImage", 5),
+  userHttpController.handleCreatePetAdoptionPost
+);
+router.get(
+  "/adoption-posts",
+  authenticate,
+  userHttpController.handleGetUserAdoptionPosts
+);
+router.get(
+  "/adoption-feed",
+  authenticate,
+  userHttpController.handleGetAllAdoptionPosts
+);
+router.get(
+  "/adoption-posts/:postId",
+  authenticate,
+  userHttpController.handleGetAdoptionPost
+);
+router.delete(
+  "/adoption-posts/:postId",
+  authenticate,
+  userHttpController.handleDeletePetAdoptionPost
+);
 
 // Pet adoption application routes
-router.post('/adoption-applications', authenticate, userHttpController.handleApplyForAdoption);
-router.get('/adoption-applications', authenticate, userHttpController.handleGetMyAdoptionApplications);
-router.get('/adoption-applications/received', authenticate, userHttpController.handleGetReceivedAdoptionApplications);
-router.put('/adoption-applications/:applicationId/approve', authenticate, userHttpController.handleApproveAdoptionApplication);
-router.put('/adoption-applications/:applicationId/reject', authenticate, userHttpController.handleRejectAdoptionApplication);
+router.post(
+  "/adoption-applications",
+  authenticate,
+  userHttpController.handleApplyForAdoption
+);
+router.get(
+  "/adoption-applications",
+  authenticate,
+  userHttpController.handleGetMyAdoptionApplications
+);
+router.get(
+  "/adoption-applications/received",
+  authenticate,
+  userHttpController.handleGetReceivedAdoptionApplications
+);
+router.put(
+  "/adoption-applications/:applicationId/approve",
+  authenticate,
+  userHttpController.handleApproveAdoptionApplication
+);
+router.put(
+  "/adoption-applications/:applicationId/reject",
+  authenticate,
+  userHttpController.handleRejectAdoptionApplication
+);
 
 export default router;

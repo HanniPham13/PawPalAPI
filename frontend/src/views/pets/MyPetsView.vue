@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-import { useAuthStore } from '../../stores/auth';
-import MainLayout from '../../components/layouts/MainLayout.vue';
-import CreatePetProfileView from './CreatePetProfileView.vue';
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { useAuthStore } from "../../stores/auth";
+import MainLayout from "../../components/layouts/MainLayout.vue";
+import CreatePetProfileView from "./CreatePetProfileView.vue";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface PetProfile {
   id: string;
@@ -30,17 +32,20 @@ const fetchPets = async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    const response = await axios.get('/api/pet/user-pets', {
-      headers: { Authorization: `Bearer ${authStore.token}` }
+    const response = await axios.get("/api/pet/user-pets", {
+      headers: { Authorization: `Bearer ${authStore.token}` },
     });
     if (response.data.success) {
       pets.value = response.data.data;
     } else {
-      error.value = response.data.message || 'Failed to fetch pets.';
+      error.value = response.data.message || "Failed to fetch pets.";
     }
   } catch (err: any) {
-    error.value = err.response?.data?.message || err.message || 'An unexpected error occurred.';
-    console.error('Error fetching pets:', err);
+    error.value =
+      err.response?.data?.message ||
+      err.message ||
+      "An unexpected error occurred.";
+    console.error("Error fetching pets:", err);
   } finally {
     isLoading.value = false;
   }
@@ -61,7 +66,8 @@ const handlePetCreated = () => {
 
 const toggleAdoptableStatus = async (petId: string, currentStatus: boolean) => {
   try {
-    const response = await axios.patch(`/api/pet/profile/${petId}/toggle-adoptable`, 
+    const response = await axios.patch(
+      `/api/pet/profile/${petId}/toggle-adoptable`,
       { isAdoptable: !currentStatus },
       { headers: { Authorization: `Bearer ${authStore.token}` } }
     );
@@ -69,8 +75,16 @@ const toggleAdoptableStatus = async (petId: string, currentStatus: boolean) => {
       await fetchPets(); // Refresh the list to show updated status
     }
   } catch (err: any) {
-    error.value = err.response?.data?.message || err.message || 'Failed to update adoptable status.';
+    error.value =
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to update adoptable status.";
   }
+};
+
+const getImageUrl = (profilePicture: string | undefined) => {
+  if (!profilePicture) return "/placeholder-pet.jpg";
+  return `${API_URL}/${profilePicture}`;
 };
 
 onMounted(() => {
@@ -84,8 +98,15 @@ onMounted(() => {
       <div class="page-header">
         <h1 class="page-title">My Pets</h1>
         <button @click="openCreatePetModal" class="create-pet-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon">
-            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="icon"
+          >
+            <path
+              d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
+            />
           </svg>
           Add New Pet
         </button>
@@ -93,17 +114,18 @@ onMounted(() => {
 
       <div v-if="isLoading" class="loading-indicator">Loading your pets...</div>
       <div v-if="error" class="error-message">{{ error }}</div>
-      
+
       <div v-if="pets.length > 0" class="pets-grid">
         <div v-for="pet in pets" :key="pet.id" class="pet-card">
           <div class="pet-image-container">
-            <img 
-              :src="pet.profilePicture || '/placeholder-pet.jpg'" 
+            <img
+              :src="getImageUrl(pet.profilePicture)"
               :alt="pet.name"
               class="pet-image"
+              @error="$event.target.src = '/placeholder-pet.jpg'"
             />
-            <div class="pet-status" :class="{ 'adoptable': pet.isAdoptable }">
-              {{ pet.isAdoptable ? 'Up for Adoption' : 'Not for Adoption' }}
+            <div class="pet-status" :class="{ adoptable: pet.isAdoptable }">
+              {{ pet.isAdoptable ? "Up for Adoption" : "Not for Adoption" }}
             </div>
           </div>
           <div class="pet-content">
@@ -116,29 +138,47 @@ onMounted(() => {
               <p v-if="pet.size"><strong>Size:</strong> {{ pet.size }}</p>
               <p v-if="pet.color"><strong>Color:</strong> {{ pet.color }}</p>
             </div>
-            <p v-if="pet.description" class="pet-description">{{ pet.description }}</p>
+            <p v-if="pet.description" class="pet-description">
+              {{ pet.description }}
+            </p>
             <div class="pet-actions">
-              <router-link :to="`/pet/${pet.id}/edit`" class="edit-btn">Edit Profile</router-link>
-              <button 
+              <router-link :to="`/pet/${pet.id}/edit`" class="edit-btn"
+                >Edit Profile</router-link
+              >
+              <button
                 @click="toggleAdoptableStatus(pet.id, pet.isAdoptable)"
                 class="toggle-adoption-btn"
-                :class="{ 'adoptable': pet.isAdoptable }"
+                :class="{ adoptable: pet.isAdoptable }"
               >
-                {{ pet.isAdoptable ? 'Remove from Adoption' : 'Put up for Adoption' }}
+                {{
+                  pet.isAdoptable
+                    ? "Remove from Adoption"
+                    : "Put up for Adoption"
+                }}
               </button>
             </div>
           </div>
         </div>
       </div>
       <div v-else-if="!isLoading && !error" class="empty-pets">
-        You haven't added any pets yet. Click the "Add New Pet" button to get started!
+        You haven't added any pets yet. Click the "Add New Pet" button to get
+        started!
+      </div>
+      <div class="copyright">
+        © {{ new Date().getFullYear() }} PawPal. All rights reserved.
       </div>
     </div>
 
     <!-- Create Pet Modal -->
-    <div v-if="showCreatePetModal" class="modal-overlay" @click.self="closeCreatePetModal">
+    <div
+      v-if="showCreatePetModal"
+      class="modal-overlay"
+      @click.self="closeCreatePetModal"
+    >
       <div class="modal-content">
-        <button @click="closeCreatePetModal" class="modal-close-btn">&times;</button>
+        <button @click="closeCreatePetModal" class="modal-close-btn">
+          &times;
+        </button>
         <CreatePetProfileView @petCreated="handlePetCreated" />
       </div>
     </div>
@@ -150,6 +190,9 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  min-height: calc(100vh - 80px); /* Adjust for footer height */
+  position: relative;
+  padding-bottom: 60px; /* Space for footer */
 }
 
 .page-header {
@@ -191,7 +234,8 @@ onMounted(() => {
   height: 1.25rem;
 }
 
-.loading-indicator, .empty-pets {
+.loading-indicator,
+.empty-pets {
   text-align: center;
   padding: 2rem;
   color: #777;
@@ -293,7 +337,8 @@ onMounted(() => {
   margin-top: 1rem;
 }
 
-.edit-btn, .toggle-adoption-btn {
+.edit-btn,
+.toggle-adoption-btn {
   flex: 1;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
@@ -343,9 +388,11 @@ onMounted(() => {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
 }
 
 .modal-content {
@@ -353,27 +400,59 @@ onMounted(() => {
   padding: 2rem;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  width: 90%;
+  width: 100%;
   max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
+  margin: auto;
   position: relative;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-close-btn {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #888;
-  background: none;
+  color: #666;
+  background: #f3f4f6;
   border: none;
+  border-radius: 50%;
   cursor: pointer;
+  transition: all 0.2s;
   z-index: 10;
 }
 
 .modal-close-btn:hover {
+  background: #e5e7eb;
   color: #333;
 }
-</style> 
+
+.copyright {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+}
+</style>

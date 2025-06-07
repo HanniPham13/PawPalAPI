@@ -1,53 +1,11 @@
-import { PrismaClient, User, Clinic } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { ClinicData } from "../types/clinic";
 
 const prisma = new PrismaClient();
 
-// Function to create a new clinic
-export const createClinic = async (
-  userId: string,
-  data: {
-    name: string;
-    description?: string;
-    phone?: string;
-    email?: string;
-    website?: string;
-    operatingHours?: string;
-    profilePictureUrl?: string;
-    coverPictureUrl?: string;
-    address: {
-      address: string;
-      city: string;
-      state: string;
-      zipCode: string;
-    };
-    images?: string[]; // Array of image URLs
-  }
-): Promise<{
-  success: boolean;
-  message: string;
-  data?: Partial<Clinic>;
-}> => {
+// Create a new clinic
+export const createClinic = async (ownerId: string, data: ClinicData) => {
   try {
-    // Check if user exists and is a VET
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        message: 'User not found'
-      };
-    }
-
-    if (user.role !== 'VET') {
-      return {
-        success: false,
-        message: 'Only veterinarians can create clinics'
-      };
-    }
-
-    // Create the clinic
     const clinic = await prisma.clinic.create({
       data: {
         name: data.name,
@@ -58,77 +16,282 @@ export const createClinic = async (
         operatingHours: data.operatingHours,
         profilePictureUrl: data.profilePictureUrl,
         coverPictureUrl: data.coverPictureUrl,
-        verificationStatus: 'PENDING', // All new clinics start as pending
-        ownerId: userId,
-        // Create address
+        ownerId,
+        verificationStatus: "PENDING",
         address: {
           create: {
             address: data.address.address,
             city: data.address.city,
             state: data.address.state,
-            zipCode: data.address.zipCode
-          }
+            zipCode: data.address.zipCode,
+          },
         },
-        // Create images if provided
         ...(data.images && data.images.length > 0
           ? {
               ClinicImage: {
                 createMany: {
-                  data: data.images.map(imageUrl => ({
-                    imageUrl
-                  }))
-                }
-              }
+                  data: data.images.map((imageUrl) => ({
+                    imageUrl,
+                  })),
+                },
+              },
             }
-          : {})
+          : {}),
       },
       include: {
         address: true,
-        ClinicImage: true
-      }
+        ClinicImage: true,
+      },
     });
 
     return {
       success: true,
-      message: 'Clinic created successfully',
-      data: clinic
+      message: "Clinic created successfully",
+      data: clinic,
     };
   } catch (error) {
-    console.error('Create clinic error:', error);
     return {
       success: false,
-      message: 'Failed to create clinic'
+      message:
+        error instanceof Error ? error.message : "Failed to create clinic",
     };
   }
 };
 
-// Function to get clinics owned by a vet
-export const getVetClinics = async (userId: string): Promise<{
-  success: boolean;
-  message: string;
-  data?: any;
-}> => {
+// Get all clinics for a vet
+export const getVetClinics = async (ownerId: string) => {
   try {
     const clinics = await prisma.clinic.findMany({
       where: {
-        ownerId: userId
+        ownerId,
       },
       include: {
         address: true,
-        ClinicImage: true
-      }
+        ClinicImage: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     return {
       success: true,
-      message: 'Clinics retrieved successfully',
-      data: clinics
+      data: clinics,
     };
   } catch (error) {
-    console.error('Get vet clinics error:', error);
     return {
       success: false,
-      message: 'Failed to retrieve clinics'
+      message:
+        error instanceof Error ? error.message : "Failed to retrieve clinics",
+    };
+  }
+};
+
+// Get a specific clinic by ID
+export const getClinicById = async (ownerId: string, clinicId: string) => {
+  try {
+    const clinic = await prisma.clinic.findFirst({
+      where: {
+        id: clinicId,
+        ownerId,
+      },
+      include: {
+        address: true,
+        ClinicImage: true,
+      },
+    });
+
+    if (!clinic) {
+      return {
+        success: false,
+        message: "Clinic not found",
+      };
+    }
+
+    return {
+      success: true,
+      data: clinic,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to retrieve clinic",
+    };
+  }
+};
+
+// Update clinic details
+export const updateClinic = async (
+  ownerId: string,
+  clinicId: string,
+  data: Partial<ClinicData>
+) => {
+  try {
+    // Check if clinic exists and belongs to the vet
+    const existingClinic = await prisma.clinic.findFirst({
+      where: {
+        id: clinicId,
+        ownerId,
+      },
+    });
+
+    if (!existingClinic) {
+      return {
+        success: false,
+        message: "Clinic not found or unauthorized",
+      };
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      name: data.name,
+      description: data.description,
+      phone: data.phone,
+      email: data.email,
+      website: data.website,
+      operatingHours: data.operatingHours,
+      profilePictureUrl: data.profilePictureUrl,
+      coverPictureUrl: data.coverPictureUrl,
+    };
+
+    // Handle address update if provided
+    if (data.address) {
+      updateData.address = {
+        update: {
+          where: {
+            clinicId,
+          },
+          data: {
+            address: data.address.address,
+            city: data.address.city,
+            state: data.address.state,
+            zipCode: data.address.zipCode,
+          },
+        },
+      };
+    }
+
+    // Handle clinic images if provided
+    if (data.images && data.images.length > 0) {
+      updateData.ClinicImage = {
+        createMany: {
+          data: data.images.map((imageUrl) => ({
+            imageUrl,
+          })),
+        },
+      };
+    }
+
+    const updatedClinic = await prisma.clinic.update({
+      where: {
+        id: clinicId,
+      },
+      data: updateData,
+      include: {
+        address: true,
+        ClinicImage: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Clinic updated successfully",
+      data: updatedClinic,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to update clinic",
+    };
+  }
+};
+
+// Update clinic verification status
+export const updateClinicStatus = async (
+  ownerId: string,
+  clinicId: string,
+  status: "PENDING" | "APPROVED" | "REJECTED"
+) => {
+  try {
+    // Check if clinic exists and belongs to the vet
+    const existingClinic = await prisma.clinic.findFirst({
+      where: {
+        id: clinicId,
+        ownerId,
+      },
+    });
+
+    if (!existingClinic) {
+      return {
+        success: false,
+        message: "Clinic not found or unauthorized",
+      };
+    }
+
+    const updatedClinic = await prisma.clinic.update({
+      where: {
+        id: clinicId,
+      },
+      data: {
+        verificationStatus: status,
+      },
+      include: {
+        address: true,
+        ClinicImage: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Clinic status updated successfully",
+      data: updatedClinic,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update clinic status",
+    };
+  }
+};
+
+// Delete a clinic
+export const deleteClinic = async (ownerId: string, clinicId: string) => {
+  try {
+    // Check if clinic exists and belongs to the vet
+    const existingClinic = await prisma.clinic.findFirst({
+      where: {
+        id: clinicId,
+        ownerId,
+      },
+    });
+
+    if (!existingClinic) {
+      return {
+        success: false,
+        message: "Clinic not found or unauthorized",
+      };
+    }
+
+    await prisma.clinic.delete({
+      where: {
+        id: clinicId,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Clinic deleted successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to delete clinic",
     };
   }
 };
